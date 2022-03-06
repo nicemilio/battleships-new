@@ -2,5 +2,6 @@
 using battleships;
 
 board myBoard = new board(10, 10, true);
-board enemyBoard = new board(10, 10, false);
+//Console.WriteLine(myBoard.checkPosition(1, 9, 1, false));
+//myBoard.tryPlace(1, 7, 2, false);
 myBoard.printBoard();

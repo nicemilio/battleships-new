@@ -80,28 +80,29 @@ namespace battleships
         {
             if (checkPosition(theX, theY, theLength, isVertical))
             {
-                for(int i = (isVertical ? theY : theX); i <= (isVertical ? theX + theLength : 1); i++)
+                for(int i = (isVertical ? theY : theX); i <= (isVertical ? theX : theX + theLength - 1); i++)
                 {
-                    for(int j = (isVertical ? theY : theX); j <= (isVertical ? 1 : theY + theLength); j++)
+                    for(int j = (isVertical ? theX : theY); j <= (isVertical ? theY + theLength - 1 : theY); j++)
                     {
-                        mBoard[i, j] = 's';
+                        mBoard[j, i] = 's';
                     }
-                    return true;
                 }
+                return true;
             }
             return false;
         }
 
-        bool checkPosition(int theX, int theY, int theLength, bool isVertical)
+        public bool checkPosition(int theX, int theY, int theLength, bool isVertical)
         {
             bool isClear = true;
-            if ((isVertical ? theY : theX) + theLength < mBoard.GetLength(isVertical ? 1 : 0)) //is in Board
+            if ((isVertical ? theY : theX) + theLength - 1 < mBoard.GetLength(isVertical ? 1 : 0)) //is in Board
             {
-                for (int i = theX - 1 < 0 ? 0 : theX - 1; i < (theX + 1 > mBoard.GetLength(1) ? theX + (isVertical ? theLength : 1) : mBoard.GetLength(1)) ; i++)
+                for (int i = theX - 1 < 0 ? 0 : theX - 1; i <= (theX + 1 > mBoard.GetLength(1) - 1 ? theX : theX + (isVertical ? 1 : theLength)) ; i++)
                 {
-                    for (int j = theY - 1 < 0 ? 0 : theY - 1; j < (theY + 1 > mBoard.GetLength(0) ? theY + (isVertical ? 1 : theLength) : mBoard.GetLength(0)) ; j++)
+                    for (int j = theY - 1 < 0 ? 0 : theY - 1; j <= (theY + 1 > mBoard.GetLength(0) - 1 ? theY : theY + (isVertical ? theLength : 1)) ; j++)
                     {
-                        if (mBoard[i, j] == 's')
+                        Console.WriteLine("Checking X: " + i + " Y: " + j);
+                        if (mBoard[j, i] == 's')
                         {
                             isClear = false;
                             break;
