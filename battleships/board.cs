@@ -7,9 +7,9 @@ namespace battleships
         public bool mReady { get; set; }
         Random rnd = new Random();
 
-        public board(int x, int y, bool autoPlace = false)
+        public board(int rows, int cols, bool autoPlace = false)
         {
-            mBoard = new char[x,y];
+            mBoard = new char[rows,cols];
             fillBoard ();
             if (autoPlace)
                 autoFill ();
@@ -29,11 +29,12 @@ namespace battleships
                 bool suc = false;
                 while(!suc)
                 {
-                    int randX = rnd.Next (0, 10);
-                    int randY = rnd.Next (0, 10);
+                    int randRow = rnd.Next (0, 10);
+                    int randCol = rnd.Next (0, 10);
                     bool randDir = rnd.Next(0, 2) == 0 ? false : true;
-                    suc = tryPlace(randX, randY, i, randDir);
-                    Console.WriteLine("X: " + randX + " Y: " + randY + " Length: " + i + " RandDir: " + randDir + " Successfull ?" + suc);
+                    Console.WriteLine("Row: " + randRow + ", Col: " + randCol + ", Length: " + i + ", RandDir: " + randDir);
+                    suc = tryPlace(randRow, randCol, i, randDir);
+                    Console.WriteLine("Successfull? " + suc);
                 }
             }
         }
@@ -55,77 +56,81 @@ namespace battleships
             {
                 for (int j = 0; j < mBoard.GetLength(1); j++)
                 {
-                    Console.Write(mBoard[i,j]);
+                    Console.Write(mBoard[i,j] + " ");
                 }
                 Console.WriteLine("");
             }
         }
-        public char shoot(int theX, int theY)
+        public char shoot(int theRow, int theCol)
         {
-            if (mBoard[theX, theY] == 's')
+            if (mBoard[theRow, theCol] == 's')
             {
-                mBoard[theX, theY] = 'x';
-                if (checkIfDestroyed(theX, theY))
+                mBoard[theRow, theCol] = 'x';
+                if (checkIfDestroyed(theRow, theCol))
                     return 'd';
                 return 'x';
             }
             else
             {
-                mBoard[theX, theY] = 'o';
+                mBoard[theCol, theCol] = 'o';
                 return 'o';
             }
         }
 
-        public bool tryPlace (int theX, int theY, int theLength, bool isVertical)
+        public bool tryPlace (int theRow, int theCol, int theLength, bool isVertical)
         {
-            if (checkPosition(theX, theY, theLength, isVertical))
+            if (checkPosition(theRow, theCol, theLength, isVertical))
             {
-                for(int i = (isVertical ? theY : theX); i <= (isVertical ? theX : theX + theLength - 1); i++)
-                {
-                    for(int j = (isVertical ? theX : theY); j <= (isVertical ? theY + theLength - 1 : theY); j++)
-                    {
-                        mBoard[j, i] = 's';
-                    }
-                }
+                if (isVertical) 
+                    for(int i = theRow; i < theRow + theLength; i++) mBoard[i, theCol] = 's';
+                else 
+                    for (int i = theCol; i < theCol + theLength; i++) mBoard[theRow, i] = 's';
+                
                 return true;
             }
             return false;
         }
 
-        public bool checkPosition(int theX, int theY, int theLength, bool isVertical)
+        public bool checkPosition(int theRow, int theCol, int theLength, bool isVertical)
         {
-            bool isClear = true;
-            if ((isVertical ? theY : theX) + theLength - 1 < mBoard.GetLength(isVertical ? 1 : 0)) //is in Board
+            int startRow =  theRow - 1 < 0 ? 0 : theRow - 1;
+            int startCol =  theCol - 1 < 0 ? 0 : theCol - 1;
+            int lengthRow = theRow + (isVertical ? theLength : 1);
+            int lengthCol = theCol + (isVertical ? 1 : theLength); 
+            int endRow = lengthRow < mBoard.GetLength(0) - 1 ? lengthRow : mBoard.GetLength(0) - 1; //Min(mBoard.GetLength, lengthRow)
+            int endCol = lengthCol < mBoard.GetLength(1) - 1 ? lengthCol : mBoard.GetLength(1) - 1;
+
+            if ((isVertical ? theRow : theCol) + theLength <= mBoard.GetLength(isVertical ? 0 : 1)) //is in Board
             {
-                for (int i = theX - 1 < 0 ? 0 : theX - 1; i <= (theX + 1 > mBoard.GetLength(1) - 1 ? theX : theX + (isVertical ? 1 : theLength)) ; i++)
+                for (int i = startRow; i <= endRow; i++)
                 {
-                    for (int j = theY - 1 < 0 ? 0 : theY - 1; j <= (theY + 1 > mBoard.GetLength(0) - 1 ? theY : theY + (isVertical ? theLength : 1)) ; j++)
+                    for (int j = startCol; j <= endCol; j++)
                     {
-                        Console.WriteLine("Checking X: " + i + " Y: " + j);
-                        if (mBoard[j, i] == 's')
+                        Console.WriteLine("Checking Row: " + i + " Col: " + j);
+                        if (mBoard[i, j] == 's')
                         {
-                            isClear = false;
-                            break;
+                            return false;
                         }
                     }
                 }
             }
-            else
-                isClear = false;
-            return isClear;
+            else return false;
+            return true;
         }
 
-        bool checkIfDestroyed(int theX, int theY)
+        bool checkIfDestroyed(int theRow, int theCol)
         {
-            for (int i = theX - 1 < 0 ? 0 : theX - 1; i <= (theX + 1 > mBoard.GetLength(1) ? mBoard.GetLength(1) : theX + 1); i++)
+            return checkPosition(theRow, theCol, 1, false);
+
+        /*    for (int i = theRow - 1 < 0 ? 0 : theRow - 1; i <= (theRow + 1 > mBoard.GetLength(1) ? mBoard.GetLength(1) : theRow + 1); i++)
             {
-                for (int j = theY - 1 < 0 ? 0 : theY - 1; j <= (theY + 1 > mBoard.GetLength(0) ? mBoard.GetLength(0) : theY + 1); j++)
+                for (int j = theCol - 1 < 0 ? 0 : theCol - 1; j <= (theCol + 1 > mBoard.GetLength(0) ? mBoard.GetLength(0) : theCol + 1); j++)
                 {
                     if (mBoard[i, j] == 's')
                         return false;
                 }
             }
-            return true;
+            return true; */
         }
     }
 }
