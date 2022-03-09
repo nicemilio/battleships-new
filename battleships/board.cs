@@ -1,7 +1,4 @@
-﻿using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
+﻿using System.Net.Sockets;
 
 namespace battleships
 {
@@ -11,9 +8,12 @@ namespace battleships
         public bool mReady { get; set; }
         Random rnd = new Random();
         String mEnemyMove = "Empty";
+        private int[] schiffe = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
+        private int shipCount;
 
         public board(int rows, int cols, bool autoPlace = false)
         {
+            this.shipCount = schiffe.Length;
             mBoard = new char[rows,cols];
             FillBoard ();
             if (autoPlace)
@@ -39,9 +39,7 @@ namespace battleships
         }
         void AutoFill()
         {
-            int[] schiffe;
-            schiffe = new int[]{4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
-            foreach(int i in schiffe)
+            foreach(int i in this.schiffe)
             {
                 bool suc = false;
                 while(!suc)
@@ -83,8 +81,10 @@ namespace battleships
             if (mBoard[theRow, theCol] == 's')
             {
                 mBoard[theRow, theCol] = 'x';
-                if (CheckIfDestoyed(theRow, theCol))
-                    return 'd';
+                if (CheckIfDestoyed(theRow, theCol)) {
+                    this.shipCount -= 1;
+                    return this.shipCount == 0 ? 'g' : 'd';
+                }
                 return 'x';
             }
             else
@@ -94,7 +94,12 @@ namespace battleships
             }
         }
 
-        public bool TryPlace (int theRow, int theCol, int theLength, bool isVertical)
+        //This method is used on enemyBoard to assign hits and misses
+        public void AssignChar(int theRow, int theCol, char theChar) {
+            mBoard[theRow, theCol] = theChar;
+        }
+
+        private bool TryPlace (int theRow, int theCol, int theLength, bool isVertical)
         {
             if (CheckPosition(theRow, theCol, theLength, isVertical))
             {
@@ -108,7 +113,7 @@ namespace battleships
             return false;
         }
 
-        public bool CheckPosition(int theRow, int theCol, int theLength, bool isVertical)
+        private bool CheckPosition(int theRow, int theCol, int theLength, bool isVertical)
         {
             int startRow =  theRow - 1 < 0 ? 0 : theRow - 1;
             int startCol =  theCol - 1 < 0 ? 0 : theCol - 1;
@@ -135,19 +140,8 @@ namespace battleships
             return true;
         }
 
-        bool CheckIfDestoyed(int theRow, int theCol)
-        {
+        bool CheckIfDestoyed(int theRow, int theCol) {
             return CheckPosition(theRow, theCol, 1, false);
-
-        /*    for (int i = theRow - 1 < 0 ? 0 : theRow - 1; i <= (theRow + 1 > mBoard.GetLength(1) ? mBoard.GetLength(1) : theRow + 1); i++)
-            {
-                for (int j = theCol - 1 < 0 ? 0 : theCol - 1; j <= (theCol + 1 > mBoard.GetLength(0) ? mBoard.GetLength(0) : theCol + 1); j++)
-                {
-                    if (mBoard[i, j] == 's')
-                        return false;
-                }
-            }
-            return true; */
         }
     }
 }

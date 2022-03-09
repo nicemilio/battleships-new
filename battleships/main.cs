@@ -1,7 +1,4 @@
-﻿using System;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
+﻿using System.Net.Sockets;
 using battleships;
 
 string choice = "x";
