@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace battleships
 {
@@ -52,7 +47,7 @@ namespace battleships
                 }
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byte_count);
-                broadcast(data);
+                broadcast(data, client);
                 Console.WriteLine(data);
             }
 
@@ -61,7 +56,7 @@ namespace battleships
             client.Close();
         }
 
-        public static void broadcast(string data)
+        public static void broadcast(string data, TcpClient client)
         {
             byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
 
@@ -69,6 +64,7 @@ namespace battleships
             {
                 foreach (TcpClient c in list_clients.Values)
                 {
+                    if (c == client) return; //Don't send the message to the sender
                     NetworkStream stream = c.GetStream();
 
                     stream.Write(buffer, 0, buffer.Length);
