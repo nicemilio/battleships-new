@@ -14,7 +14,6 @@ namespace battleships
 
         public board(int rows, int cols, bool autoPlace = false)
         {
-            StartClient ();
             mBoard = new char[rows,cols];
             FillBoard ();
             if (autoPlace)
@@ -28,34 +27,7 @@ namespace battleships
 * x = schiff getroffen
 **/
 
-        private void StartClient()
-        {
-            IPAddress ip = IPAddress.Parse("127.0.0.1");
-            int port = 5000;
-            TcpClient client = new TcpClient();
-            client.Connect(ip, port);
-            Console.WriteLine("Application connected to server!");
-            //NetworkStream ns = client.GetStream();
-            Thread thread = new Thread(o => ReceiveData((TcpClient)o));
-
-            thread.Start(client);
-                //byte[] buffer = Encoding.ASCII.GetBytes(s);
-                //ns.Write(buffer, 0, buffer.Length);
-
-            
-        }
-
-        void ReceiveData(TcpClient client)
-        {
-            NetworkStream ns = client.GetStream();
-            byte[] receivedBytes = new byte[1024];
-            int byte_count;
-
-            while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
-            {
-                this.mEnemyMove += (Encoding.ASCII.GetString(receivedBytes, 0, byte_count));
-            }
-        }
+        
 
         void StopClient(TcpClient client)
         {
