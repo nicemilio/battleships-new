@@ -11,11 +11,11 @@ namespace battleships
 
         public Server()
         {
-            int count = 1;
+            int count = 0;
 
             TcpListener ServerSocket = new TcpListener(IPAddress.Any, 5000);
             ServerSocket.Start();
-
+            Console.WriteLine("Server started!");
             while (true)
             {
                 TcpClient client = ServerSocket.AcceptTcpClient();
@@ -47,6 +47,7 @@ namespace battleships
                 }
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byte_count);
+                if (data == "?Connect" && id == 1) startgame();
                 broadcast(data, client);
                 Console.WriteLine(data);
             }
@@ -56,7 +57,14 @@ namespace battleships
             client.Close();
         }
 
-        public static void broadcast(string data, TcpClient client)
+        private static void startgame() {
+            //TODO add something to randomise the starting player
+            Console.WriteLine("starting the game");
+            broadcast("first!", list_clients[0]);
+            broadcast("second!", list_clients[1]);
+        }
+
+        public static void broadcast(string data, TcpClient client = null)
         {
             byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
 
