@@ -31,17 +31,17 @@ namespace battleships {
 
     void StartClient(TcpClient client) {
         //"127.0.0.1"
-        IPAddress ip = IPAddress.Parse("192.168.1.108");
+        IPAddress ip = IPAddress.Parse("127.0.0.1");
         int port = 5000;
         string keepTrying = "y";
-        while (keepTrying == "y") {
+        //while (keepTrying == "y") {
             try {client.Connect(ip, port);}
             catch(SocketException e) {
-                Console.WriteLine("Connection refused. Want to try again? y/n");
-                string readLine = Console.ReadLine();
-                keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
+                //Console.WriteLine("Connection refused. Want to try again? y/n");
+                //string readLine = Console.ReadLine();
+                //keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
             }
-        }
+        //}
         // if (!keepTrying) exit;
         
         Console.WriteLine("Application connected to server!");
