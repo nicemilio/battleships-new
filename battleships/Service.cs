@@ -34,14 +34,14 @@ namespace battleships {
         IPAddress ip = IPAddress.Parse("127.0.0.1");
         int port = 5000;
         string keepTrying = "y";
-        //while (keepTrying == "y") {
-            try {client.Connect(ip, port);}
+        while (keepTrying == "y") {
+            try {client.Connect(ip, port); keepTrying = "n";}
             catch(SocketException e) {
                 //Console.WriteLine("Connection refused. Want to try again? y/n");
                 //string readLine = Console.ReadLine();
                 //keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
             }
-        //}
+        }
         // if (!keepTrying) exit;
         
         Console.WriteLine("Application connected to server!");
