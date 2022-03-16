@@ -95,7 +95,7 @@ namespace battleships {
             }
             if (mData.Length == 3) SendData(client, checkEnemyShot(mData));
             else {
-                SendData(client, RETRY);
+                //SendData(client, RETRY);
             }
             
 

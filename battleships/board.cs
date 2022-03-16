@@ -47,9 +47,7 @@ namespace battleships
                     int randRow = rnd.Next (0, 10);
                     int randCol = rnd.Next (0, 10);
                     bool randDir = rnd.Next(0, 2) == 0 ? false : true;
-                    Console.WriteLine("Row: " + randRow + ", Col: " + randCol + ", Length: " + i + ", RandDir: " + randDir);
                     suc = TryPlace(randRow, randCol, i, randDir);
-                    Console.WriteLine("Successfull? " + suc);
                 }
             }
         }
@@ -128,7 +126,6 @@ namespace battleships
                 {
                     for (int j = startCol; j <= endCol; j++)
                     {
-                        Console.WriteLine("Checking Row: " + i + " Col: " + j);
                         if (mBoard[i, j] == 's')
                         {
                             return false;
