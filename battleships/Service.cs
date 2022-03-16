@@ -24,18 +24,17 @@ namespace battleships {
         this.enemyBoard = enemyBoard;
         this.client = client;
         this.myTurn = true;
-        Console.WriteLine("Starting client");
-        StartClient(client);
-        SendData(client, "Connect");
+        Console.WriteLine ("Starting client");
+        StartClient (client);
     }
 
-    void StartClient(TcpClient client) {
+    void StartClient (TcpClient client) {
         //"127.0.0.1"
-        IPAddress ip = IPAddress.Parse("127.0.0.1");
+        IPAddress ip = IPAddress.Parse ("127.0.0.1");
         int port = 5000;
         string keepTrying = "y";
         while (keepTrying == "y") {
-            try {client.Connect(ip, port); keepTrying = "n";}
+            try {client.Connect (ip, port); keepTrying = "n";}
             catch(SocketException e) {
                 //Console.WriteLine("Connection refused. Want to try again? y/n");
                 //string readLine = Console.ReadLine();
@@ -44,56 +43,57 @@ namespace battleships {
         }
         // if (!keepTrying) exit;
         
-        Console.WriteLine("Application connected to server!");
-        Thread threadReceiveData = new Thread(o => ReceiveData((TcpClient)o));
-        Thread threadMyTurn = new Thread(Shoot);
-        threadReceiveData.Start(client);      
+        Console.WriteLine ("Application connected to server!");
+        Thread threadReceiveData = new Thread (o => ReceiveData ((TcpClient)o));
+        Thread threadMyTurn = new Thread (Shoot);
+        threadReceiveData.Start (client);
+        threadMyTurn.Start ();      
     }
-    void ReceiveData(TcpClient client) {
-        NetworkStream ns = client.GetStream();
+    void ReceiveData (TcpClient client) {
+        NetworkStream ns = client.GetStream ();
         byte[] receivedBytes = new byte[1024];
         int byte_count;
 
-        while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
+        while ((byte_count = ns.Read (receivedBytes, 0, receivedBytes.Length)) > 0)
         {
-            if (Encoding.ASCII.GetString(receivedBytes, 0, byte_count) == "?") mData = "";
-            else mData += (Encoding.ASCII.GetString(receivedBytes, 0, byte_count));
+            if (Encoding.ASCII.GetString (receivedBytes, 0, byte_count) == "?") mData = "";
+            else mData += (Encoding.ASCII.GetString (receivedBytes, 0, byte_count));
             
             switch(mData) { //TODO finsh different scenerios
                 case(FIRST): {
-                    Console.WriteLine("You go first!");
+                    Console.WriteLine ("You go first!");
                     this.myTurn = true;
                     return;
                 }
                 case(SECOND): {
-                    Console.WriteLine("You go second!");
+                    Console.WriteLine ("You go second!");
                     this.myTurn = false;
                     return;
                 }
                 case(MISS): {
-                    Console.WriteLine(mData);
-                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'o');
+                    Console.WriteLine (mData);
+                    this.enemyBoard.AssignChar (this.lastShot[0], this.lastShot[1], 'o');
                     this.myTurn = true;
                     return;
                 }
                 case(HIT): 
                 case(DESTROY): {
-                    Console.WriteLine(mData);
-                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
+                    Console.WriteLine (mData);
+                    this.enemyBoard.AssignChar (this.lastShot[0], this.lastShot[1], 'x');
                     this.myTurn = true;
                     return;
                 }
                 case(RETRY): {
-                    Console.WriteLine("Bad input, shoot again");
+                    Console.WriteLine ("Bad input, shoot again");
                     this.myTurn = true;
                     return;
                 }
                 case(GAME): {
-                    Console.WriteLine("Game over, you win!");
+                    Console.WriteLine ("Game over, you win!");
                     return;
                 }
             }
-            if (mData.Length == 3) SendData(client, checkEnemyShot(mData));
+            if (mData.Length == 3) SendData (client, checkEnemyShot (mData));
             else {
                 //SendData(client, RETRY);
             }
@@ -102,20 +102,20 @@ namespace battleships {
         }
     }
 
-    void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
+    void Shoot () {
         if (this.myTurn) {
             //Take the shot
-            Console.WriteLine("Your turn!");
-            string readLine = Console.ReadLine();
+            Console.WriteLine ("Your turn!");
+            string readLine = Console.ReadLine ();
             if (readLine == "" || readLine == null) return;
-            SendData(this.client, readLine);
+            SendData (this.client, readLine);
             this.myTurn = false;
         }
     }
     void SendData(TcpClient client, String theMessage) {
         NetworkStream ns = client.GetStream ();
-        byte[] buffer = Encoding.ASCII.GetBytes("?"+theMessage);
-        ns.Write(buffer, 0, buffer.Length);
+        byte[] buffer = Encoding.ASCII.GetBytes (theMessage);
+        ns.Write (buffer, 0, buffer.Length);
     }
 
     string checkEnemyShot(string shot) {
