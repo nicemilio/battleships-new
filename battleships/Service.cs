@@ -15,7 +15,7 @@ namespace battleships {
         private board enemyBoard;
         private TcpClient client;
         private string mData = "";
-        private bool myTurn; //TODO Need some logic at the start of the game to decide who goes first
+        private bool myTurn = false; //TODO Need some logic at the start of the game to decide who goes first
         private int[] lastShot = new int[2]; //{theRow, theCol}
        
 
@@ -23,31 +23,31 @@ namespace battleships {
         this.myBoard = myBoard;
         this.enemyBoard = enemyBoard;
         this.client = client;
-        this.myTurn = true;
-        Console.WriteLine ("Starting client");
-        StartClient (client);
+        this.myTurn = false;
+        Console.WriteLine("Starting client");
+        StartClient(client);
     }
 
     void StartClient (TcpClient client) {
         //"127.0.0.1"
-        IPAddress ip = IPAddress.Parse ("127.0.0.1");
+        IPAddress ip = IPAddress.Parse("10.31.250.209");
         int port = 5000;
         string keepTrying = "y";
         while (keepTrying == "y") {
             try {client.Connect (ip, port); keepTrying = "n";}
             catch(SocketException e) {
-                //Console.WriteLine("Connection refused. Want to try again? y/n");
-                //string readLine = Console.ReadLine();
-                //keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
+                Console.WriteLine("Connection refused. Want to try again? y/n");
+                string readLine = Console.ReadLine();
+                keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
             }
         }
         // if (!keepTrying) exit;
         
-        Console.WriteLine ("Application connected to server!");
-        Thread threadReceiveData = new Thread (o => ReceiveData ((TcpClient)o));
-        Thread threadMyTurn = new Thread (Shoot);
-        threadReceiveData.Start (client);
-        threadMyTurn.Start ();      
+        Console.WriteLine("Application connected to server!");
+        Thread threadReceiveData = new Thread(o => ReceiveData((TcpClient)o));
+        Thread threadMyTurn = new Thread(Shoot);
+        threadReceiveData.Start(client);
+        threadMyTurn.Start();
     }
     void ReceiveData (TcpClient client) {
         NetworkStream ns = client.GetStream ();
@@ -56,10 +56,15 @@ namespace battleships {
 
         while ((byte_count = ns.Read (receivedBytes, 0, receivedBytes.Length)) > 0)
         {
-            if (Encoding.ASCII.GetString (receivedBytes, 0, byte_count) == "?") mData = "";
-            else mData += (Encoding.ASCII.GetString (receivedBytes, 0, byte_count));
-            
-            switch(mData) { //TODO finsh different scenerios
+            Console.Write("Message recieved: ");
+            mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
+            Console.WriteLine(mData);
+          //  if (mData.Contains(FIRST)) {
+          //      Console.WriteLine("You go first!");
+          //      this.myTurn = true;
+          //      return;
+          //  }
+            switch(mData.Substring(0, mData.Length-1)) { //TODO finsh different scenerios
                 case(FIRST): {
                     Console.WriteLine ("You go first!");
                     this.myTurn = true;
@@ -71,16 +76,16 @@ namespace battleships {
                     return;
                 }
                 case(MISS): {
-                    Console.WriteLine (mData);
-                    this.enemyBoard.AssignChar (this.lastShot[0], this.lastShot[1], 'o');
-                    this.myTurn = true;
+                    Console.WriteLine(mData);
+                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'o');
+                    this.myTurn = false;
                     return;
                 }
                 case(HIT): 
                 case(DESTROY): {
-                    Console.WriteLine (mData);
-                    this.enemyBoard.AssignChar (this.lastShot[0], this.lastShot[1], 'x');
-                    this.myTurn = true;
+                    Console.WriteLine(mData);
+                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
+                    this.myTurn = false;
                     return;
                 }
                 case(RETRY): {
@@ -93,8 +98,12 @@ namespace battleships {
                     return;
                 }
             }
-            if (mData.Length == 3) SendData (client, checkEnemyShot (mData));
+            if (mData.Length == 4) {
+                SendData(client, checkEnemyShot(mData));
+                this.myTurn = true;
+                }
             else {
+                
                 //SendData(client, RETRY);
             }
             
@@ -102,20 +111,23 @@ namespace battleships {
         }
     }
 
-    void Shoot () {
-        if (this.myTurn) {
-            //Take the shot
-            Console.WriteLine ("Your turn!");
-            string readLine = Console.ReadLine ();
-            if (readLine == "" || readLine == null) return;
-            SendData (this.client, readLine);
-            this.myTurn = false;
+    void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
+        while (true) {
+            //Console.WriteLine("Checking myTurn...");
+            if (this.myTurn) {
+                //Take the shot
+                Console.WriteLine("Your turn!");
+                string readLine = Console.ReadLine();
+                if (readLine == "" || readLine == null) return;
+                SendData(this.client, readLine);
+                this.myTurn = false;
+            }
         }
     }
     void SendData(TcpClient client, String theMessage) {
         NetworkStream ns = client.GetStream ();
-        byte[] buffer = Encoding.ASCII.GetBytes (theMessage);
-        ns.Write (buffer, 0, buffer.Length);
+        byte[] buffer = Encoding.ASCII.GetBytes(theMessage);
+        ns.Write(buffer, 0, buffer.Length);
     }
 
     string checkEnemyShot(string shot) {
