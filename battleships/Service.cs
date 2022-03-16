@@ -30,7 +30,7 @@ namespace battleships {
 
     void StartClient (TcpClient client) {
         //"127.0.0.1"
-        IPAddress ip = IPAddress.Parse("10.31.250.209");
+        IPAddress ip = IPAddress.Parse("127.0.0.1");
         int port = 5000;
         string keepTrying = "y";
         while (keepTrying == "y") {
@@ -40,6 +40,7 @@ namespace battleships {
                 string readLine = Console.ReadLine();
                 keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
             }
+            keepTrying = "n";
         }
         // if (!keepTrying) exit;
         
@@ -113,7 +114,9 @@ namespace battleships {
 
     void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
-            //Console.WriteLine("Checking myTurn...");
+            Thread.Sleep(1000);
+
+            Console.WriteLine("Checking myTurn...");
             if (this.myTurn) {
                 //Take the shot
                 Console.WriteLine("Your turn!");
