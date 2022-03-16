@@ -16,8 +16,11 @@ namespace battleships
             this.shipCount = schiffe.Length;
             mBoard = new char[rows,cols];
             FillBoard ();
-            if (autoPlace)
+            if (autoPlace) {
                 AutoFill ();
+                PrintBoard ();
+            }
+                
         }
 
         /**

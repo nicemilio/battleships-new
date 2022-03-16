@@ -47,7 +47,7 @@ namespace battleships
                 }
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byte_count);
-                if (data == "?Connect" && id == 1) startgame();
+                if (data == "Connect" && id == 1) startgame();
                 broadcast(data, client);
                 Console.WriteLine(data);
             }
