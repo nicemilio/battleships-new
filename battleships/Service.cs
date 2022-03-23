@@ -53,7 +53,9 @@ namespace battleships {
         NetworkStream ns = client.GetStream();
         byte[] receivedBytes = new byte[1024];
         int byte_count;
+        while (true) {
 
+        
         while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
         {
             Console.Write("Message recieved: ");
@@ -68,34 +70,34 @@ namespace battleships {
                 case(FIRST): {
                     Console.WriteLine("You go first!");
                     this.myTurn = true;
-                    return;
+                    break;
                 }
                 case(SECOND): {
                     Console.WriteLine("You go second!");
                     this.myTurn = false;
-                    return;
+                    break;
                 }
                 case(MISS): {
                     Console.WriteLine(mData);
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'o');
                     this.myTurn = false;
-                    return;
+                    break;
                 }
                 case(HIT): 
                 case(DESTROY): {
                     Console.WriteLine(mData);
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
                     this.myTurn = false;
-                    return;
+                    break;
                 }
                 case(RETRY): {
                     Console.WriteLine("Bad input, shoot again");
                     this.myTurn = true;
-                    return;
+                    break;
                 }
                 case(GAME): {
                     Console.WriteLine("Game over, you win!");
-                    return;
+                    break;
                 }
             }
             if (mData.Length == 4) {
@@ -108,6 +110,7 @@ namespace battleships {
             }
             
 
+        }
         }
     }
 
