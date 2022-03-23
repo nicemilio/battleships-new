@@ -68,13 +68,16 @@ namespace battleships
 
         public void PrintBoard()
         {
+            char[] coord = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'};
+            Console.WriteLine("  1 2 3 4 5 6 7 8 9 10");
             for (int i = 0; i < mBoard.GetLength(0); i++)
             {
+                Console.Write(coord[i]);
                 for (int j = 0; j < mBoard.GetLength(1); j++)
                 {
-                    Console.Write(mBoard[i,j] + " ");
+                    Console.Write(" " + mBoard[i,j]);
                 }
-                Console.WriteLine("");
+                Console.Write('\n');
             }
         }
         public char Shoot(int theRow, int theCol)
