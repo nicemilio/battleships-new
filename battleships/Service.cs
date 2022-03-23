@@ -58,14 +58,7 @@ namespace battleships {
         
         while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
         {
-            Console.Write("Message recieved: ");
             mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
-            Console.WriteLine(mData);
-          //  if (mData.Contains(FIRST)) {
-          //      Console.WriteLine("You go first!");
-          //      this.myTurn = true;
-          //      return;
-          //  }
             switch(mData.Substring(0, mData.Length-1)) { //TODO finsh different scenerios
                 case(FIRST): {
                     Console.WriteLine("You go first!");
@@ -78,8 +71,9 @@ namespace battleships {
                     break;
                 }
                 case(MISS): {
-                    Console.WriteLine(mData);
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'o');
+                    refreshConsole();
+                    Console.WriteLine(mData);
                     this.myTurn = false;
                     break;
                 }
@@ -87,17 +81,21 @@ namespace battleships {
                 case(DESTROY): {
                     Console.WriteLine(mData);
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
+                    refreshConsole();
+                    Console.WriteLine(mData);
                     this.myTurn = false;
                     break;
                 }
                 case(RETRY): {
+                    refreshConsole();
                     Console.WriteLine("Bad input, shoot again");
                     this.myTurn = true;
                     break;
                 }
                 case(GAME): {
+                    refreshConsole();
                     Console.WriteLine("Game over, you win!");
-                    break;
+                    return;
                 }
             }
             if (mData.Length == 4) {
@@ -119,10 +117,15 @@ namespace battleships {
             //Console.WriteLine("Checking myTurn...");
             if (this.myTurn) {
                 //Take the shot
+
+                refreshConsole();
                 Console.WriteLine("Your turn!");
+
                 string readLine = Console.ReadLine();
                 if (readLine == "" || readLine == null) return;
                 SendData(this.client, readLine);
+                this.lastShot[0] = coordinateToRowCol(readLine.Substring(0, 1));
+                this.lastShot[1] = coordinateToRowCol(readLine.Substring(1, 2));
                 this.myTurn = false;
             }
         }
@@ -134,16 +137,28 @@ namespace battleships {
     }
 
     string checkEnemyShot(string shot) {
-        int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
-        int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
-        switch(this.myBoard.Shoot(theRow, theCol)) {
+        try {
+            int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
+            int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
+            switch(this.myBoard.Shoot(theRow, theCol)) {
             case('o'): return MISS;
             case('x'): return HIT;
             case('d'): return DESTROY;
             case('g'): return GAME;
             default: throw new Exception("Something went wrong");
         }
+        } catch (Exception e) {
+            Console.WriteLine("Your opponent entered bad coordinates, they are trying again");
+            return RETRY;
+        }
+    }
 
+    void refreshConsole() {
+        Console.Clear();
+        Console.WriteLine("Your Board");
+        this.myBoard.PrintBoard();
+        Console.WriteLine("Enemy Board");
+        this.enemyBoard.PrintBoard();
     }
     //Helper method to conver battleshipe coordinates (A10) to our integers
     int coordinateToRowCol(string co) {
@@ -181,8 +196,5 @@ namespace battleships {
             default: throw new Exception("Not a valid coordinate");
         }  
     }
-
-
-
-        }
+    }
 }
