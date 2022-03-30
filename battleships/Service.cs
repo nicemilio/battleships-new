@@ -83,7 +83,7 @@ namespace battleships {
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
                     refreshConsole();
                     Console.WriteLine(mData);
-                    this.myTurn = false;
+                    this.myTurn = true;
                     break;
                 }
                 case(RETRY): {
@@ -99,8 +99,9 @@ namespace battleships {
                 }
             }
             if (mData.Length == 4) {
-                SendData(client, checkEnemyShot(mData));
-                this.myTurn = true;
+                String response = checkEnemyShot(mData);
+                SendData(client, response);
+                this.myTurn = (response != HIT);
                 }
             else {
                 
