@@ -7,8 +7,8 @@ namespace battleships {
         private const string MISS = "miss!";
         private const string HIT = "hit!";
         private const string DESTROY = "destroyed!";
-        private const string GAME = "game!";
-        private const string RETRY = "retry!";
+        private const string GAME = "Game over, you win!";
+        private const string RETRY = "Bad input, shoot again";
         private const string FIRST = "first!";
         private const string SECOND = "second!";
         private board myBoard;
@@ -59,55 +59,23 @@ namespace battleships {
         while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
         {
             mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
-            switch(mData.Substring(0, mData.Length-1)) { //TODO finsh different scenerios
-                case(FIRST): {
-                    Console.WriteLine("You go first!");
-                    this.myTurn = true;
-                    break;
-                }
-                case(SECOND): {
-                    Console.WriteLine("You go second!");
-                    this.myTurn = false;
-                    break;
-                }
-                case(MISS): {
-                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'o');
-                    refreshConsole();
-                    Console.WriteLine(mData);
-                    this.myTurn = false;
-                    break;
-                }
-                case(HIT): 
-                case(DESTROY): {
-                    Console.WriteLine(mData);
-                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
-                    refreshConsole();
-                    Console.WriteLine(mData);
-                    this.myTurn = true;
-                    break;
-                }
-                case(RETRY): {
-                    refreshConsole();
-                    Console.WriteLine("Bad input, shoot again");
-                    this.myTurn = true;
-                    break;
-                }
-                case(GAME): {
-                    refreshConsole();
-                    Console.WriteLine("Game over, you win!");
-                    return;
-                }
-            }
-            if (mData.Length == 4) {
+            mData = mData.Substring(0, mData.Length-1);
+            this.myTurn = false;
+            if (mData.Length == 3) {
                 String response = checkEnemyShot(mData);
                 SendData(client, response);
-                this.myTurn = (response != HIT);
-                }
-            else {
-                
-                //SendData(client, RETRY);
+                this.myTurn = (response != HIT && response != DESTROY);
+                if (this.myTurn) refreshConsole(mData);
+                else refreshConsole("Your opponent hit ("+mData+") and is taking another turn");
+                break;
             }
-            
+            String[] myTurnArray = {FIRST, HIT, DESTROY, RETRY};
+            this.myTurn = myTurnArray.Contains(mData);
+            String[] shotResponseArray = {MISS, HIT, DESTROY};
+            if (shotResponseArray.Contains(mData))
+                this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], mData == MISS ? 'o' : 'x');
+
+            refreshConsole(mData);
 
         }
         }
@@ -119,7 +87,6 @@ namespace battleships {
             if (this.myTurn) {
                 //Take the shot
 
-                refreshConsole();
                 Console.WriteLine("Your turn!");
 
                 string readLine = Console.ReadLine();
@@ -154,12 +121,13 @@ namespace battleships {
         }
     }
 
-    void refreshConsole() {
+    void refreshConsole(String message = "") {
         Console.Clear();
         Console.WriteLine("Your Board");
         this.myBoard.PrintBoard();
         Console.WriteLine("Enemy Board");
         this.enemyBoard.PrintBoard();
+        Console.WriteLine(message);
     }
     //Helper method to conver battleshipe coordinates (A10) to our integers
     int coordinateToRowCol(string co) {
