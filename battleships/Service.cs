@@ -7,8 +7,8 @@ namespace battleships {
         private const string MISS = "miss!";
         private const string HIT = "hit!";
         private const string DESTROY = "destroyed!";
-        private const string GAME = "game!";
-        private const string RETRY = "retry!";
+        private const string GAME = "Game over, you win!";
+        private const string RETRY = "Bad input, shoot again";
         private const string FIRST = "first!";
         private const string SECOND = "second!";
         private board myBoard;
@@ -54,61 +54,31 @@ namespace battleships {
         NetworkStream ns = client.GetStream ();
         byte[] receivedBytes = new byte[1024];
         int byte_count;
+        while (true) {
 
-        while ((byte_count = ns.Read (receivedBytes, 0, receivedBytes.Length)) > 0)
+        
+        while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
         {
-            Console.Write("Message recieved: ");
             mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
-            Console.WriteLine(mData);
-          //  if (mData.Contains(FIRST)) {
-          //      Console.WriteLine("You go first!");
-          //      this.myTurn = true;
-          //      return;
-          //  }
-            switch(mData.Substring(0, mData.Length-1)) { //TODO finsh different scenerios
-                case(FIRST): {
-                    Console.WriteLine ("You go first!");
-                    this.myTurn = true;
-                    return;
-                }
-                case(SECOND): {
-                    Console.WriteLine ("You go second!");
-                    this.myTurn = false;
-                    return;
-                }
-                case(MISS): {
-                    Console.WriteLine(mData);
-                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'o');
-                    this.myTurn = false;
-                    return;
-                }
-                case(HIT): 
-                case(DESTROY): {
-                    Console.WriteLine(mData);
-                    this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
-                    this.myTurn = false;
-                    return;
-                }
-                case(RETRY): {
-                    Console.WriteLine ("Bad input, shoot again");
-                    this.myTurn = true;
-                    return;
-                }
-                case(GAME): {
-                    Console.WriteLine ("Game over, you win!");
-                    return;
-                }
+            mData = mData.Substring(0, mData.Length-1);
+            this.myTurn = false;
+            if (mData.Length == 3) {
+                String response = checkEnemyShot(mData);
+                SendData(client, response);
+                this.myTurn = (response != HIT && response != DESTROY);
+                if (this.myTurn) refreshConsole(mData);
+                else refreshConsole("Your opponent hit ("+mData+") and is taking another turn");
+                break;
             }
-            if (mData.Length == 4) {
-                SendData(client, checkEnemyShot(mData));
-                this.myTurn = true;
-                }
-            else {
-                
-                //SendData(client, RETRY);
-            }
-            
+            String[] myTurnArray = {FIRST, HIT, DESTROY, RETRY};
+            this.myTurn = myTurnArray.Contains(mData);
+            String[] shotResponseArray = {MISS, HIT, DESTROY};
+            if (shotResponseArray.Contains(mData))
+                this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], mData == MISS ? 'o' : 'x');
 
+            refreshConsole(mData);
+
+        }
         }
     }
 
@@ -119,10 +89,14 @@ namespace battleships {
             Console.WriteLine("Checking myTurn...");
             if (this.myTurn) {
                 //Take the shot
+
                 Console.WriteLine("Your turn!");
+
                 string readLine = Console.ReadLine();
                 if (readLine == "" || readLine == null) return;
                 SendData(this.client, readLine);
+                this.lastShot[0] = coordinateToRowCol(readLine.Substring(0, 1));
+                this.lastShot[1] = coordinateToRowCol(readLine.Substring(1, 2));
                 this.myTurn = false;
             }
         }
@@ -134,16 +108,29 @@ namespace battleships {
     }
 
     string checkEnemyShot(string shot) {
-        int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
-        int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
-        switch(this.myBoard.Shoot(theRow, theCol)) {
+        try {
+            int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
+            int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
+            switch(this.myBoard.Shoot(theRow, theCol)) {
             case('o'): return MISS;
             case('x'): return HIT;
             case('d'): return DESTROY;
             case('g'): return GAME;
             default: throw new Exception("Something went wrong");
         }
+        } catch (Exception e) {
+            Console.WriteLine("Your opponent entered bad coordinates, they are trying again");
+            return RETRY;
+        }
+    }
 
+    void refreshConsole(String message = "") {
+        Console.Clear();
+        Console.WriteLine("Your Board");
+        this.myBoard.PrintBoard();
+        Console.WriteLine("Enemy Board");
+        this.enemyBoard.PrintBoard();
+        Console.WriteLine(message);
     }
     //Helper method to conver battleshipe coordinates (A10) to our integers
     int coordinateToRowCol(string co) {
@@ -181,8 +168,5 @@ namespace battleships {
             default: throw new Exception("Not a valid coordinate");
         }  
     }
-
-
-
-        }
+    }
 }

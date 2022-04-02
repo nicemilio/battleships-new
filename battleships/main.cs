@@ -6,8 +6,6 @@ const string UNDERLINE = "\x1B[4m";
 const string RESET = "\x1B[0m";
 
 
-
-
 while (choice != "s" && choice != "c") {
     Console.WriteLine("Should this be a " + UNDERLINE + "s" + RESET + "erver or a " + UNDERLINE + "c" + RESET + "lient application?: ");
     choice = Console.ReadLine();
