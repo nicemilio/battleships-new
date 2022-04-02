@@ -13,13 +13,14 @@ namespace battleships {
         private const string SECOND = "second!";
         private board myBoard;
         private board enemyBoard;
+        private board pcBoard;
         private TcpClient client;
         private string mData = "";
         private bool myTurn = false; //TODO Need some logic at the start of the game to decide who goes first
         private int[] lastShot = new int[2]; //{theRow, theCol}
        
 
-    public Service(board myBoard, board enemyBoard, TcpClient client) {
+    public Service (board myBoard, board enemyBoard, TcpClient client) {
         this.myBoard = myBoard;
         this.enemyBoard = enemyBoard;
         this.client = client;
@@ -28,19 +29,25 @@ namespace battleships {
         StartClient(client);
     }
 
-    void StartClient (TcpClient client) {
+    public Service (board myBoard, board pcBoard){
+        this.myBoard = myBoard;
+        this.enemyBoard = new board (10, 10, false);
+        this.pcBoard = pcBoard;
+        Console.WriteLine("You go first.");
+    }
+
+    void StartClient(TcpClient client) {
         //"127.0.0.1"
-        IPAddress ip = IPAddress.Parse("127.0.0.1");
+        IPAddress ip = IPAddress.Parse("10.31.250.209");
         int port = 5000;
         string keepTrying = "y";
         while (keepTrying == "y") {
-            try {client.Connect (ip, port); keepTrying = "n";}
+            try {client.Connect(ip, port); keepTrying = "n";}
             catch(SocketException e) {
                 Console.WriteLine("Connection refused. Want to try again? y/n");
                 string readLine = Console.ReadLine();
                 keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
             }
-            keepTrying = "n";
         }
         // if (!keepTrying) exit;
         
@@ -50,58 +57,60 @@ namespace battleships {
         threadReceiveData.Start(client);
         threadMyTurn.Start();
     }
-    void ReceiveData (TcpClient client) {
-        NetworkStream ns = client.GetStream ();
+    void ReceiveData(TcpClient client) {
+        NetworkStream ns = client.GetStream();
         byte[] receivedBytes = new byte[1024];
         int byte_count;
+        while (true) {
 
-        while ((byte_count = ns.Read (receivedBytes, 0, receivedBytes.Length)) > 0)
+        
+        while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
         {
-            Console.Write("Message recieved: ");
             mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
-            Console.WriteLine(mData);
-          //  if (mData.Contains(FIRST)) {
-          //      Console.WriteLine("You go first!");
-          //      this.myTurn = true;
-          //      return;
-          //  }
-            switch(mData.Substring(0, mData.Length-1)) { //TODO finsh different scenerios
+            mData = mData.Substring(0, mData.Length-1);
+            refreshConsole ();
+            switch(mData) { //TODO finsh different scenerios
                 case(FIRST): {
-                    Console.WriteLine ("You go first!");
+                    Console.WriteLine("You go first!");
                     this.myTurn = true;
-                    return;
+                    break;
                 }
                 case(SECOND): {
-                    Console.WriteLine ("You go second!");
+                    Console.WriteLine("You go second!");
                     this.myTurn = false;
-                    return;
+                    break;
                 }
                 case(MISS): {
-                    Console.WriteLine(mData);
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'o');
+                    Console.WriteLine(mData);
                     this.myTurn = false;
-                    return;
+                    break;
                 }
                 case(HIT): 
                 case(DESTROY): {
                     Console.WriteLine(mData);
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], 'x');
-                    this.myTurn = false;
-                    return;
+                    Console.WriteLine(mData);
+                    this.myTurn = true;
+                    break;
                 }
                 case(RETRY): {
-                    Console.WriteLine ("Bad input, shoot again");
+                    Console.WriteLine("Bad input, shoot again");
                     this.myTurn = true;
-                    return;
+                    break;
                 }
                 case(GAME): {
-                    Console.WriteLine ("Game over, you win!");
+                    Console.WriteLine("Game over, you win!");
                     return;
                 }
             }
-            if (mData.Length == 4) {
-                SendData(client, checkEnemyShot(mData));
-                this.myTurn = true;
+            if (mData.Length == 3) {
+                String response = checkEnemyShot(mData);
+                SendData(client, response);
+                this.myTurn = (response != HIT && response != DESTROY);
+                if (! this.myTurn){
+                    Console.WriteLine("You opponent hit (" + mData + ").");
+                }
                 }
             else {
                 
@@ -110,19 +119,23 @@ namespace battleships {
             
 
         }
+        }
     }
 
     void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
-            Thread.Sleep(1000);
-
-            Console.WriteLine("Checking myTurn...");
+            //Console.WriteLine("Checking myTurn...");
             if (this.myTurn) {
                 //Take the shot
+
+                refreshConsole();
                 Console.WriteLine("Your turn!");
+
                 string readLine = Console.ReadLine();
                 if (readLine == "" || readLine == null) return;
                 SendData(this.client, readLine);
+                this.lastShot[0] = coordinateToRowCol(readLine.Substring(0, 1));
+                this.lastShot[1] = coordinateToRowCol(readLine.Substring(1, 2));
                 this.myTurn = false;
             }
         }
@@ -134,16 +147,28 @@ namespace battleships {
     }
 
     string checkEnemyShot(string shot) {
-        int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
-        int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
-        switch(this.myBoard.Shoot(theRow, theCol)) {
+        try {
+            int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
+            int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
+            switch(this.myBoard.Shoot(theRow, theCol)) {
             case('o'): return MISS;
             case('x'): return HIT;
             case('d'): return DESTROY;
             case('g'): return GAME;
             default: throw new Exception("Something went wrong");
         }
+        } catch (Exception e) {
+            Console.WriteLine("Your opponent entered bad coordinates, they are trying again");
+            return RETRY;
+        }
+    }
 
+    void refreshConsole() {
+        Console.Clear();
+        Console.WriteLine("Your Board");
+        this.myBoard.PrintBoard();
+        Console.WriteLine("Enemy Board");
+        this.enemyBoard.PrintBoard();
     }
     //Helper method to conver battleshipe coordinates (A10) to our integers
     int coordinateToRowCol(string co) {
@@ -181,8 +206,5 @@ namespace battleships {
             default: throw new Exception("Not a valid coordinate");
         }  
     }
-
-
-
-        }
+    }
 }

@@ -19,8 +19,19 @@ if (choice.Contains("s"))
 }
 else
 {
-    TcpClient client = new TcpClient();
-    board myBoard = new board(10, 10, true);
-    board enemyBoard = new board(10, 10, false);
-    Service service = new Service(myBoard, enemyBoard, client);
+    while (choice != "g" && choice != "p") {
+        Console.WriteLine("Willst du gegen einen Gegner oder gegen den PC spielen?");
+        choice = Console.ReadLine();
+    }
+    if (choice.Contains ("g")){
+        TcpClient client = new TcpClient();
+        board myBoard = new board(10, 10, true);
+        board enemyBoard = new board(10, 10, false);
+        Service service = new Service(myBoard, enemyBoard, client);
+    }
+    else {
+        board myBoard = new board (10, 10, true);
+        board pcBoard = new board (10, 10, true);
+        Service service = new Service (myBoard, pcBoard);
+    }
 }
