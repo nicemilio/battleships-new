@@ -28,18 +28,19 @@ namespace battleships {
         StartClient(client);
     }
 
-    void StartClient(TcpClient client) {
+    void StartClient (TcpClient client) {
         //"127.0.0.1"
-        IPAddress ip = IPAddress.Parse("10.31.250.209");
+        IPAddress ip = IPAddress.Parse("127.0.0.1");
         int port = 5000;
         string keepTrying = "y";
         while (keepTrying == "y") {
-            try {client.Connect(ip, port); keepTrying = "n";}
+            try {client.Connect (ip, port); keepTrying = "n";}
             catch(SocketException e) {
                 Console.WriteLine("Connection refused. Want to try again? y/n");
                 string readLine = Console.ReadLine();
                 keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
             }
+            keepTrying = "n";
         }
         // if (!keepTrying) exit;
         
@@ -49,8 +50,8 @@ namespace battleships {
         threadReceiveData.Start(client);
         threadMyTurn.Start();
     }
-    void ReceiveData(TcpClient client) {
-        NetworkStream ns = client.GetStream();
+    void ReceiveData (TcpClient client) {
+        NetworkStream ns = client.GetStream ();
         byte[] receivedBytes = new byte[1024];
         int byte_count;
         while (true) {
@@ -83,7 +84,9 @@ namespace battleships {
 
     void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
-            //Console.WriteLine("Checking myTurn...");
+            Thread.Sleep(1000);
+
+            Console.WriteLine("Checking myTurn...");
             if (this.myTurn) {
                 //Take the shot
 

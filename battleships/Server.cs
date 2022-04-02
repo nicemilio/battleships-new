@@ -25,6 +25,7 @@ namespace battleships
                 Thread t = new Thread(handle_clients);
                 t.Start(count);
                 count++;
+                if (list_clients.Count () == 2) startgame ();
             }
         }
 
@@ -47,8 +48,7 @@ namespace battleships
                 }
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byte_count);
-                if (data == "Connect" && id == 1) startgame();
-                broadcast(data, client);
+                broadcast(data, id);
                 Console.WriteLine(data);
             }
 
@@ -60,21 +60,21 @@ namespace battleships
         private static void startgame() {
             //TODO add something to randomise the starting player
             Console.WriteLine("starting the game");
-            broadcast("first!", list_clients[0]);
-            broadcast("second!", list_clients[1]);
+            broadcast("first!", 0);
+            broadcast("second!", 1);
         }
 
-        public static void broadcast(string data, TcpClient client = null)
+        public static void broadcast(string data, int clientID)
         {
             byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
 
             lock (_lock)
             {
-                foreach (TcpClient c in list_clients.Values)
+                foreach (var c in list_clients)
                 {
-                    if (c == client) return; //Don't send the message to the sender
-                    NetworkStream stream = c.GetStream();
-
+                    if (c.Key == clientID) continue; //Don't send the message to the sender
+                    NetworkStream stream = c.Value.GetStream();
+                    Console.WriteLine(data + " , send to client number: " + c.Key);
                     stream.Write(buffer, 0, buffer.Length);
                 }
             }
