@@ -87,8 +87,8 @@ namespace battleships {
 
         }
         }
-        }
     }
+    
 
     void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
