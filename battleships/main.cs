@@ -1,20 +1,40 @@
 ﻿using System.Net.Sockets;
 using battleships;
 
-string choice = "x";
+string? choice = "x";
 const string UNDERLINE = "\x1B[4m";
 const string RESET = "\x1B[0m";
 
-
-while (choice != "s" && choice != "c") {
-    Console.WriteLine("Should this be a " + UNDERLINE + "s" + RESET + "erver or a " + UNDERLINE + "c" + RESET + "lient application?: ");
+while (choice != "a" && choice != "m") {
+    Console.WriteLine("Do you want to play " + UNDERLINE + "a" + RESET + "lone or " + UNDERLINE + "m" + RESET + "ultiplayer?: ");
     choice = Console.ReadLine();
 }
 Console.WriteLine("");
-if (choice.Contains("s"))
-{
-    Server myServer = new Server();
+if (choice.Contains("m")) {
+    while (choice != "s" && choice != "c") {
+        Console.WriteLine("Should this be a " + UNDERLINE + "s" + RESET + "erver or a " + UNDERLINE + "c" + RESET + "lient application?: ");
+        choice = Console.ReadLine();
+    }
+    
+    if (choice.Contains("s")) {
+        Server myServer = new Server();
+    } else {
+        Console.WriteLine("Please enter the server's ip address: ");
+        string? readLine = Console.ReadLine();
+        string ip = String.IsNullOrEmpty(readLine) ? "127.0.0.1" : readLine; //TODO if IPAddress.parse can't handle the 'enter' code, remove it from readline
+        PlayerCLient pc = new PlayerCLient(ip);
+    }
+
+
+} else {
+    //TODO add threads
+    Server server = new Server();
+    PlayerCLient playerClient = new PlayerCLient();
+    BotCLient botCLient = new BotCLient();
 }
+
+
+/*
 else
 {
     while (choice != "g" && choice != "p") {
@@ -25,11 +45,12 @@ else
         TcpClient client = new TcpClient();
         board myBoard = new board(10, 10, true);
         board enemyBoard = new board(10, 10, false);
-        Service service = new Service(myBoard, enemyBoard, client);
+        PlayerCLient service = new PlayerCLient(myBoard, enemyBoard, client);
     }
     else {
         board myBoard = new board (10, 10, true);
         board pcBoard = new board (10, 10, true);
-        Service service = new Service (myBoard, pcBoard);
+       // PlayerCLient service = new PlayerCLient (myBoard, pcBoard);
     }
 }
+*/

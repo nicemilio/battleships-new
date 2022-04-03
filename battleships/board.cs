@@ -80,12 +80,22 @@ namespace battleships
                 Console.Write('\n');
             }
         }
+
+        public char PrintCoord(int theRow, int theCol) {
+            if (theRow < 0 || theRow > mBoard.GetLength(0) ||
+                theCol < 0 || theCol > mBoard.GetLength(1)) throw new IndexOutOfRangeException("Index out of bounds");
+            return this.mBoard[theRow, theCol];
+        }
+
+        public char PrintCoord(int[] coord) {
+            return this.PrintCoord(coord[0], coord[1]);
+        }
         public char Shoot(int theRow, int theCol)
         {
             if (mBoard[theRow, theCol] == 's')
             {
                 mBoard[theRow, theCol] = 'x';
-                if (CheckIfDestoyed(theRow, theCol)) {
+                if (CheckPosition(theRow, theCol, 1, false)) {
                     this.shipCount -= 1;
                     return this.shipCount == 0 ? 'g' : 'd';
                 }
@@ -117,7 +127,7 @@ namespace battleships
             return false;
         }
 
-        private bool CheckPosition(int theRow, int theCol, int theLength, bool isVertical)
+        public bool CheckPosition(int theRow, int theCol, int theLength, bool isVertical, char theChar = 's', bool skipCoord = false)
         {
             int startRow =  theRow - 1 < 0 ? 0 : theRow - 1;
             int startCol =  theCol - 1 < 0 ? 0 : theCol - 1;
@@ -132,10 +142,9 @@ namespace battleships
                 {
                     for (int j = startCol; j <= endCol; j++)
                     {
-                        if (mBoard[i, j] == 's')
-                        {
-                            return false;
-                        }
+                        if (i == theRow && j == theCol && skipCoord) continue;
+                        if (mBoard[i, j] == theChar) return false;
+                        
                     }
                 }
             }
@@ -143,8 +152,5 @@ namespace battleships
             return true;
         }
 
-        bool CheckIfDestoyed(int theRow, int theCol) {
-            return CheckPosition(theRow, theCol, 1, false);
-        }
     }
 }

@@ -3,62 +3,55 @@ using System.Net;
 using System.Text;
 
 namespace battleships {
-    public class Service {
-        private const string MISS = "miss!";
-        private const string HIT = "hit!";
-        private const string DESTROY = "destroyed!";
-        private const string GAME = "Game over, you win!";
-        private const string RETRY = "Bad input, shoot again";
-        private const string FIRST = "first!";
-        private const string SECOND = "second!";
-        private board myBoard;
-        private board enemyBoard;
-        private board pcBoard;
-        private TcpClient client;
-        private string mData = "";
-        private bool myTurn = false; //TODO Need some logic at the start of the game to decide who goes first
-        private int[] lastShot = new int[2]; //{theRow, theCol}
+    public class PlayerCLient {
+        protected const string MISS = "miss!";
+        protected const string HIT = "hit!";
+        protected const string DESTROY = "destroyed!";
+        protected const string GAME = "Game over, you win!";
+        protected const string RETRY = "Bad input, shoot again";
+        protected const string FIRST = "first!";
+        protected const string SECOND = "second!";
+        protected board myBoard;
+        protected board enemyBoard;
+        protected TcpClient client;
+        protected string mData = "";
+        protected bool myTurn = false;
+        protected int[] lastShot = new int[2]; //{theRow, theCol}
        
 
-    public Service (board myBoard, board enemyBoard, TcpClient client) {
-        this.myBoard = myBoard;
-        this.enemyBoard = enemyBoard;
-        this.client = client;
+    public PlayerCLient (string ipString = "127.0.0.1") {
+        this.client = new TcpClient();
+        this.myBoard = new board(10, 10, true);
+        this.enemyBoard = new board(10, 10, false);
         this.myTurn = false;
         Console.WriteLine("Starting client");
-        StartClient(client);
+        StartClient(ipString);
     }
 
-    public Service (board myBoard, board pcBoard){
-        this.myBoard = myBoard;
-        this.enemyBoard = new board (10, 10, false);
-        this.pcBoard = pcBoard;
-        Console.WriteLine("You go first.");
-    }
 
-    void StartClient(TcpClient client) {
+    protected virtual void StartClient(string ipString) {
         //"127.0.0.1"
-        IPAddress ip = IPAddress.Parse("10.31.250.209");
+        IPAddress ip = IPAddress.Parse(ipString);
         int port = 5000;
         string keepTrying = "y";
         while (keepTrying == "y") {
-            try {client.Connect(ip, port); keepTrying = "n";}
+            try {this.client.Connect(ip, port); keepTrying = "n";}
             catch(SocketException e) {
                 Console.WriteLine("Connection refused. Want to try again? y/n");
-                string readLine = Console.ReadLine();
+                string? readLine = Console.ReadLine();
                 keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
             }
         }
         // if (!keepTrying) exit;
         
         Console.WriteLine("Application connected to server!");
-        Thread threadReceiveData = new Thread(o => ReceiveData((TcpClient)o));
+        Thread threadReceiveData = new Thread(ReceiveData);
         Thread threadMyTurn = new Thread(Shoot);
-        threadReceiveData.Start(client);
+        threadReceiveData.Start();
         threadMyTurn.Start();
     }
-    void ReceiveData(TcpClient client) {
-        NetworkStream ns = client.GetStream();
+    protected virtual void ReceiveData() {
+        NetworkStream ns = this.client.GetStream();
         byte[] receivedBytes = new byte[1024];
         int byte_count;
         while (true) {
@@ -71,7 +64,7 @@ namespace battleships {
             this.myTurn = false;
             if (mData.Length == 3) {
                 String response = checkEnemyShot(mData);
-                SendData(client, response);
+                SendData(response);
                 this.myTurn = (response != HIT && response != DESTROY);
                 if (this.myTurn) refreshConsole(mData);
                 else refreshConsole("Your opponent hit ("+mData+") and is taking another turn");
@@ -90,7 +83,7 @@ namespace battleships {
     }
     
 
-    void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
+    protected virtual void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
             //Console.WriteLine("Checking myTurn...");
             if (this.myTurn) {
@@ -100,20 +93,20 @@ namespace battleships {
 
                 string readLine = Console.ReadLine();
                 if (readLine == "" || readLine == null) return;
-                SendData(this.client, readLine);
+                SendData(readLine);
                 this.lastShot[0] = coordinateToRowCol(readLine.Substring(0, 1));
                 this.lastShot[1] = coordinateToRowCol(readLine.Substring(1, 2));
                 this.myTurn = false;
             }
         }
     }
-    void SendData(TcpClient client, String theMessage) {
-        NetworkStream ns = client.GetStream ();
+    protected void SendData(String theMessage) {
+        NetworkStream ns = this.client.GetStream ();
         byte[] buffer = Encoding.ASCII.GetBytes(theMessage);
         ns.Write(buffer, 0, buffer.Length);
     }
 
-    string checkEnemyShot(string shot) {
+    protected virtual string checkEnemyShot(string shot) {
         try {
             int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
             int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
@@ -130,7 +123,7 @@ namespace battleships {
         }
     }
 
-    void refreshConsole(String message = "") {
+    private void refreshConsole(String message = "") {
         Console.Clear();
         Console.WriteLine("Your Board");
         this.myBoard.PrintBoard();
@@ -139,7 +132,7 @@ namespace battleships {
         Console.WriteLine(message);
     }
     //Helper method to conver battleshipe coordinates (A10) to our integers
-    int coordinateToRowCol(string co) {
+    protected int coordinateToRowCol(string co) {
         switch(co) {
             case("01"):
             case("A"):
