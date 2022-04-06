@@ -40,7 +40,6 @@ if (choice.Contains("m")) {
     Thread.Sleep(1000);
     Console.WriteLine("Starting player Client");
     playerThread.Start();
-
 }
 
 void startServer() {

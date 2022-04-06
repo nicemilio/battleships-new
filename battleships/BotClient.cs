@@ -11,6 +11,7 @@ namespace battleships {
     protected override async void StartClient(string ipString = "127.0.0.1") {
         //"127.0.0.1"
         IPAddress ip = IPAddress.Parse(ipString);
+        Console.WriteLine ("BotClient started");
         int port = 5000;
         for (int i = 0; i < 10; i++) {
             try {this.client.Connect(ip, port); break;}
@@ -39,6 +40,7 @@ namespace battleships {
                 mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
                 mData = mData.Substring(0, mData.Length-1);
                 this.myTurn = false;
+                Console.WriteLine ("Bot receives: " + mData);
                 if (mData.Length == 3) {
                     String response = checkEnemyShot(mData);
                     SendData(response);
