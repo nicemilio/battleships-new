@@ -28,11 +28,25 @@ if (choice.Contains("m")) {
 
 } else {
     //TODO add threads
-    Server server = new Server();
-    PlayerCLient playerClient = new PlayerCLient();
-    BotCLient botCLient = new BotCLient();
+    Thread serverThread = new Thread(startServer);
+    Thread playerThread = new Thread(startPlayerClient);
+    Thread botThread = new Thread(startBotClient);
+    serverThread.Start();
+    botThread.Start();
+    playerThread.Start();
+
 }
 
+void startServer() {
+    Server server = new Server();
+}
+void startPlayerClient() {
+    PlayerCLient playerCLient = new PlayerCLient();
+}
+
+void startBotClient() {
+    BotCLient botCLient = new BotCLient();
+}
 
 /*
 else

@@ -8,7 +8,7 @@ namespace battleships {
     private string previousResult = "";
     private Random rnd = new Random();
    
-    protected override async void StartClient(string ipString) {
+    protected override async void StartClient(string ipString = "127.0.0.1") {
         //"127.0.0.1"
         IPAddress ip = IPAddress.Parse(ipString);
         int port = 5000;
@@ -57,11 +57,12 @@ namespace battleships {
     protected override void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
             if (this.myTurn) {
+                Console.WriteLine("Bot is shooting!");
                 int nextRow = this.lastShot[0];
                 int nextCol = this.lastShot[1];
                 if (this.previousResult == HIT) this.hunting = true;
                 else if (this.previousResult == DESTROY) this.hunting = false;
-                // if previousResult == MISS dont change huntinh
+                // if previousResult == MISS dont change hunting
                 if (this.hunting) {
                     /*
                         check around previous shot
@@ -74,7 +75,7 @@ namespace battleships {
                         
                     */
                     
-                    if (!this.enemyBoard.CheckPosition(this.lastShot[0], this.lastShot[1], 1, false, 'x', true)) {
+                    if (! this.enemyBoard.CheckPosition(this.lastShot[0], this.lastShot[1], 1, false, 'x', true)) {
                         int dir = 1;
                         
                         bool isVertical = this.enemyBoard.PrintCoord(nextRow, nextCol - 1) == 'x' || 
