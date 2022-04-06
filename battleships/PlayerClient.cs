@@ -66,7 +66,7 @@ namespace battleships {
                 String response = checkEnemyShot(mData);
                 SendData(response);
                 this.myTurn = (response != HIT && response != DESTROY);
-                if (this.myTurn) refreshConsole(mData);
+                if (this.myTurn) refreshConsole("Your opponent shot (" + mData + ") and missed!");
                 else refreshConsole("Your opponent hit ("+mData+") and is taking another turn");
                 break;
             }

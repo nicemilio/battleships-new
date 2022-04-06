@@ -18,12 +18,14 @@ namespace battleships {
                 Console.WriteLine("Bot failed to start, trying " + (10-i) + " more times.");
             }
         }
-        
+        this.lastShot[0] = 0;
+        this.lastShot[1] = 0;
        // if (i > 9) exit; //TODO program exits when the connection doesnt work
         
         Thread threadReceiveData = new Thread(ReceiveData);
         Thread threadMyTurn = new Thread(Shoot);
         threadReceiveData.Start();
+        Thread.Sleep(100);
         threadMyTurn.Start();
     }
     protected override void ReceiveData() {
@@ -40,6 +42,8 @@ namespace battleships {
                 if (mData.Length == 3) {
                     String response = checkEnemyShot(mData);
                     SendData(response);
+                    Thread.Sleep(500);
+                   // Console.WriteLine("Bot just sent: " + response);
                     this.myTurn = (response != HIT && response != DESTROY);
                     break;
                 }
@@ -57,12 +61,13 @@ namespace battleships {
     protected override void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
             if (this.myTurn) {
-                Console.WriteLine("Bot is shooting!");
+              //  Console.WriteLine("Bot is shooting!");
                 int nextRow = this.lastShot[0];
                 int nextCol = this.lastShot[1];
                 if (this.previousResult == HIT) this.hunting = true;
                 else if (this.previousResult == DESTROY) this.hunting = false;
                 // if previousResult == MISS dont change hunting
+               // Console.WriteLine(hunting ? "Bot is hunting" : "Bot is not hunting");
                 if (this.hunting) {
                     /*
                         check around previous shot
@@ -118,13 +123,17 @@ namespace battleships {
                     }
 
                 } else {
-                    while (this.enemyBoard.CheckPosition(nextRow, nextCol, 1, false, 'x')) {
+                    //Console.WriteLine("The non hunting bot is choosing a coordinate");
+                    while ( !this.enemyBoard.CheckPosition(nextRow, nextCol, 1, false, 'x') ||
+                            this.enemyBoard.PrintCoord(nextRow, nextCol) == 'o') {
+                        
                         nextRow = rnd.Next(0, 10); //TODO change from 10 to board length
                         nextCol = rnd.Next(0, 10);
                     }
                 }
                 this.lastShot[0] = nextRow;
                 this.lastShot[1] = nextCol;
+                Console.WriteLine("Bot is shooting " + rowColToCoordinate(nextRow, nextCol));
                 SendData(rowColToCoordinate(nextRow, nextCol));
                 this.myTurn = false;
             }
@@ -181,8 +190,8 @@ namespace battleships {
 
     private string rowColToCoordinate(int theRow, int theCol) {
         string word = "";
-        word += (char)(theRow + 64);
-        word += theCol.ToString("00");
+        word += (char)(theRow + 65);
+        word += (theCol+1).ToString("00");
         return word;
     }
 

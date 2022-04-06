@@ -31,14 +31,20 @@ if (choice.Contains("m")) {
     Thread serverThread = new Thread(startServer);
     Thread playerThread = new Thread(startPlayerClient);
     Thread botThread = new Thread(startBotClient);
+    
+    Console.WriteLine("Starting Server");
     serverThread.Start();
+    Thread.Sleep(1000);
+    Console.WriteLine("Starting bot Client");
     botThread.Start();
+    Thread.Sleep(1000);
+    Console.WriteLine("Starting player Client");
     playerThread.Start();
 
 }
 
 void startServer() {
-    Server server = new Server();
+    Server server = new Server(false);
 }
 void startPlayerClient() {
     PlayerCLient playerCLient = new PlayerCLient();
