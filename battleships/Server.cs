@@ -24,7 +24,7 @@ namespace battleships
                 lock (_lock) list_clients.Add(count, client);
                 if (this.consoleWrite) Console.WriteLine("Someone connected!!");
 
-                Thread t = new Thread(handle_clients);
+                Thread t = new Thread((o) => handle_clients(o));
                 t.Start(count);
                 count++;
                 if (list_clients.Count () == 2) startgame ();

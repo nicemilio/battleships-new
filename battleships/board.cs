@@ -7,7 +7,6 @@ namespace battleships
         char [,] mBoard { get; set; }
         public bool mReady { get; set; }
         Random rnd = new Random();
-        String mEnemyMove = "Empty";
         private int[] schiffe = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
         private int shipCount;
 
@@ -18,7 +17,6 @@ namespace battleships
             FillBoard ();
             if (autoPlace) {
                 AutoFill ();
-                PrintBoard ();
             }
                 
         }
@@ -74,28 +72,37 @@ namespace battleships
             {
                 Console.Write(coord[i]);
                 for (int j = 0; j < mBoard.GetLength(1); j++)
-                {
+                {   //If else chain
+                    Console.ForegroundColor = mBoard[i,j] == 'w' ? ConsoleColor.Blue 
+                                            : mBoard[i,j] == 'o' ? ConsoleColor.Green 
+                                            : mBoard[i,j] == 'x' ? ConsoleColor.Red 
+                                            : mBoard[i,j] == 's' ? ConsoleColor.Yellow 
+                                            : ConsoleColor.Magenta; //If this is reached, something went wrong
                     Console.Write(" " + mBoard[i,j]);
+                    Console.ForegroundColor = ConsoleColor.White;
                 }
                 Console.Write('\n');
             }
         }
 
-        public char PrintCoord(int theRow, int theCol) {
+        public char GetCoord(int theRow, int theCol) {
             if (theRow < 0 || theRow > mBoard.GetLength(0) ||
                 theCol < 0 || theCol > mBoard.GetLength(1)) throw new IndexOutOfRangeException("Index out of bounds");
             return this.mBoard[theRow, theCol];
         }
 
-        public char PrintCoord(int[] coord) {
-            return this.PrintCoord(coord[0], coord[1]);
+        public char GetCoord(int[] coord) {
+            return this.GetCoord(coord[0], coord[1]);
         }
         public char Shoot(int theRow, int theCol)
         {
+            if (mBoard[theRow, theCol] == 'o') return 'o';
+            if (mBoard[theRow, theCol] == 'x') return 'x';
+
             if (mBoard[theRow, theCol] == 's')
             {
                 mBoard[theRow, theCol] = 'x';
-                if (CheckPosition(theRow, theCol, 1, false)) {
+                if (CheckDestroyed(theRow, theCol)) {
                     this.shipCount -= 1;
                     return this.shipCount == 0 ? 'g' : 'd';
                 }
@@ -103,9 +110,49 @@ namespace battleships
             }
             else
             {
-                mBoard[theCol, theCol] = 'o';
+                mBoard[theRow, theCol] = 'o';
                 return 'o';
             }
+        }
+
+        private bool CheckDestroyed(int theRow, int theCol) {
+            char[] ship = {'s', 'x'};
+            char[] water = {'w', 'o'};
+            int dir = 1;
+            //Check if the boat was length 1. If yes, return yes. If no check for the rest
+            if (CheckPosition(theRow, theCol, 1, true)) return true;
+            int lowerCol = theCol == 0 ? theCol : theCol - 1;
+            int upperCol = theCol == mBoard.GetLength(1) ? theCol : theCol + 1; //Avoid IndexOutOfBoundError
+            bool isVertical = ship.Contains(GetCoord(theRow, lowerCol)) || ship.Contains(GetCoord(theRow, upperCol));
+            
+            try {
+                while (GetCoord(theRow, theCol) != 'w') {
+                    //TODO add check for loop to these if statements
+                    if (GetCoord(theRow, theCol) == 'o') {
+                        dir *= -1;
+                        } //Check if the next coordinate was already tried
+                    
+                    if (GetCoord(theRow, theCol) == 's') return false;
+                    //Move along the ship until you hit water
+                    if (isVertical) theCol += dir;
+                    else theRow += dir;
+                }
+
+                {
+                    if (isVertical) theCol += dir;
+                    else theRow += dir;
+                    if (GetCoord(theRow, theCol) == 's') return false;
+                    if (water.Contains(GetCoord(theRow, theCol))) {
+                        dir *= -1;
+                        if (dir == 1) return true;
+                    }
+                }
+
+            } catch (IndexOutOfRangeException) {
+                dir *= -1;
+                if (dir == 1) throw new Exception("Help, I'm stuck in a loop. Row|Col|isVert: " + theRow + "|" + theCol + "|" + isVertical); //TODO more information here
+            }
+            throw new Exception("Something went wrong. Row|Col|isVert: " + theRow + "|" + theCol + "|" + isVertical);
         }
 
         //This method is used on enemyBoard to assign hits and misses
@@ -144,7 +191,6 @@ namespace battleships
                     {
                         if (i == theRow && j == theCol && skipCoord) continue;
                         if (mBoard[i, j] == theChar) return false;
-                        
                     }
                 }
             }
