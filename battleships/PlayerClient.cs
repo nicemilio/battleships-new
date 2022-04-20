@@ -65,7 +65,10 @@ namespace battleships {
                 String response = checkEnemyShot(mData);
                 Console.WriteLine("Response is: " + response);
                 SendData(response);
-                if (myTurnArray.Contains(response)) {
+                if (response == GAME) {
+                    this.message += ("Your opponent hit ("+mData+") and won the game!\n");
+                    //TODO Offer rematch
+                } else if (myTurnArray.Contains(response)) {
                     this.message += ("Your opponent hit ("+mData+") and is taking another turn\n");
                     RefreshConsole();
                 }
@@ -77,8 +80,10 @@ namespace battleships {
                 break;
             }
             
-            if (shotResponseArray.Contains(mData))
+           
+            if (shotResponseArray.Contains(mData)) 
                 this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], mData == MISS ? 'o' : 'x');
+            if (mData == DESTROY) this.enemyBoard.fillMisses(this.lastShot[0], this.lastShot[1]);
             this.message = mData+"\n";
             RefreshConsole();
             if (myTurnArray.Contains(mData)) Shoot();
@@ -124,6 +129,7 @@ namespace battleships {
             default: throw new Exception("Something went wrong");
         }
         } catch (Exception e) {
+            Console.WriteLine(e.Message);
             Console.WriteLine(e.StackTrace);
             Console.WriteLine("Your opponent entered bad coordinates, they are trying again");
             return RETRY;
@@ -139,6 +145,7 @@ namespace battleships {
         this.enemyBoard.PrintBoard();
         Console.Write(this.message);
     }
+
     //Helper method to conver battleshipe coordinates (A10) to our integers
     protected int coordinateToRowCol(string co) {
         switch(co) {

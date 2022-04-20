@@ -5,7 +5,7 @@ using System.Text;
 namespace battleships {
     public class BotCLient : PlayerCLient {
     private bool hunting = false;
-    protected int[] lastHit = new int[2];
+    protected int[] lastHit = {-1, -1};
     private Random rnd = new Random();
    
     protected override void StartClient(string ipString = "127.0.0.1") {
@@ -42,16 +42,18 @@ namespace battleships {
                 if (mData.Length == 3) {
                     String response = checkEnemyShot(mData);
                     SendData(response);
-                    Thread.Sleep(500);
+                    if (response == GAME) break; //End the game here
                     if (!myTurnArray.Contains(response)) Shoot();
                     break;
                 }
                 if (shotResponseArray.Contains(mData)) 
                     this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], mData == MISS ? 'o' : 'x');
+                if (mData == DESTROY) this.enemyBoard.fillMisses(this.lastShot[0], this.lastShot[1]);
                 //Assign hunting
                 if (mData == HIT) {
                     this.hunting = true;
-                    this.lastHit = this.lastShot;
+                    this.lastHit[0] = this.lastShot[0];
+                    this.lastHit[1] = this.lastShot[1];
                 } else if (mData == DESTROY) this.hunting = false;
                 if (myTurnArray.Contains(mData)) Shoot();
             }
@@ -65,99 +67,96 @@ namespace battleships {
         Console.WriteLine("Bot is hunting: "+ this.hunting);
 
         if (this.hunting) {
+           
             nextRow = this.lastHit[0];
             nextCol = this.lastHit[1];
-            if (! this.enemyBoard.CheckPosition(this.lastShot[0], this.lastShot[1], 1, false, 'x', true)) {
+            Console.WriteLine("Bot's last hit was: [" + nextRow + "," + nextCol + "]");
+            Console.WriteLine("Bot's last shot was: [" + lastShot[0] + "," + lastShot[1] + "]");
+            if (! this.enemyBoard.CheckPosition(nextRow, nextCol, 1, false, 'x', true)) {
                 Console.WriteLine("Bot is on a streak and is killing your ship");
                 int dir = 1;
-                
-                bool isVertical = this.enemyBoard.GetCoord(nextRow, nextCol - 1) == 'x' || 
-                                this.enemyBoard.GetCoord(nextRow, nextCol + 1) == 'x';
-                try {
-                    while (this.enemyBoard.GetCoord(nextRow, nextCol) != 'w') {
-                        //TODO add check for loop to these if statements
-                        if (this.enemyBoard.GetCoord(nextRow, nextCol) == 'o') dir *= -1; //Check if the next coordinate was already tried
-                        if (isVertical ? this.enemyBoard.GetCoord(nextRow, nextCol + (2*dir)) == 'x' :
-                                            this.enemyBoard.GetCoord(nextRow + (2*dir), nextCol) == 'x') dir *= -1; //Check if a ship is 2 spots away
-                        if (this.enemyBoard.GetCoord(nextRow, nextCol) == 's') break;
-                        //Move along the ship until you hit water
-                        if (isVertical) nextCol += dir;
-                        else nextRow += dir;
+                bool isHorizontal = this.enemyBoard.checkHorizontal(nextRow, nextCol);
+
+                while (this.enemyBoard.GetCoord(nextRow, nextCol) != 'w') {
+                    if (isHorizontal) {
+                        if (nextCol == this.enemyBoard.GetLength(1) - 1 ||
+                            nextCol == 0 ||
+                            enemyBoard.GetCoord(nextRow, Math.Min(nextCol, this.enemyBoard.GetLength(1)-1)) == 'o') { //Avoid IndexOutOfBoundsError
+                                if (dir == -1) throw new Exception("Help, I'm stuck in a loop. Row|Col|isHorizontal: " + nextRow + "|" + nextCol + "|" + isHorizontal);
+                                dir = -1;
+                            }
+                        nextCol += dir;
+                    } else {
+                        if (nextRow == this.enemyBoard.GetLength(0) - 1 ||
+                            nextRow == 0 ||
+                            enemyBoard.GetCoord(Math.Min(nextRow, this.enemyBoard.GetLength(0)-1), nextCol) == 'o') {
+                                if (dir == -1) throw new Exception("Help, I'm stuck in a loop. Row|Col|isHorizontal: " + nextRow + "|" + nextCol + "|" + isHorizontal);
+                                dir = -1;
+                            }
+                        nextRow += dir;
                     }
-                } catch (IndexOutOfRangeException) {
-                    dir *= -1;
-                    if (dir == 1) throw new Exception("Help, I'm stuck in a loop. Row|Col|isVert: " + nextRow + "|" + nextCol + "|" + isVertical); //TODO more information here
                 }
+                Console.WriteLine("While clause exited...");
             } else {
                 Console.WriteLine("Bot got his first hit and is choosing a random direction");
                 int choice = chooseDirection(nextRow, nextCol);
                 Console.WriteLine("The choice is: " + choice);
-                switch (chooseDirection(nextRow, nextCol)) {
+                switch (choice) {
                     case 0: {
-                        nextCol -= 1;
-                        break;
-                    }
-                    case 1: {
-                        nextCol += 1;
-                        break;
-                    }
-                    case 2: {
                         nextRow -= 1;
                         break;
                     }
-                    case 3: {
+                    case 1: {
                         nextRow += 1;
+                        break;
+                    }
+                    case 2: {
+                        nextCol -= 1;
+                        break;
+                    }
+                    case 3: {
+                        nextCol += 1;
                         break;
                     }
                     default: throw new Exception("Something went wrong");
                 }
-                Console.WriteLine("Hunting bot will shoot: [" + nextRow + "," + nextCol + "]");
-                
             }
-            
+            Console.WriteLine("Hunting bot will shoot: [" + nextRow + "," + nextCol + "]");
         } else {
-            {
+            do {
                 nextRow = rnd.Next(0, 10); //TODO change from 10 to board length
                 nextCol = rnd.Next(0, 10);
-            } while ( !this.enemyBoard.CheckPosition(nextRow, nextCol, 1, false, 'x') ||
-                       this.enemyBoard.GetCoord(nextRow, nextCol) == 'o');
+                Console.WriteLine("Bot is trying [" + nextRow + "," + nextCol + "]");
+            } while (this.enemyBoard.GetCoord(nextRow, nextCol) != 'w');
+            Console.WriteLine("While clause exited...");
         }
         this.lastShot[0] = nextRow;
         this.lastShot[1] = nextCol;
+        Console.WriteLine("Bot is shooting: [" + lastShot[0] + "," + lastShot[1] + "]");
+        Console.WriteLine("Bot's latest hit was: [" + lastHit[0] + "," + lastHit[1] + "]");
         SendData(rowColToCoordinate(nextRow, nextCol));
     }
 
     private int chooseDirection(int theRow, int theCol) {
-        //TODO refactor for DRY and less exception throwing
+        //(0, up) (1, down) (2, left) (3. right)
+        int[] options = {0, 1, 2, 3};
 
-        //Up
-        try {
-            if (this.enemyBoard.GetCoord(theRow, theCol - 1) == 'w') try {
-                if (this.enemyBoard.GetCoord(theRow, theCol - 2) != 'x') return 0;
-            } catch (IndexOutOfRangeException) {return 0;}
-        } catch (IndexOutOfRangeException) {}
 
-        //Down
-        try {
-            if (this.enemyBoard.GetCoord(theRow, theCol + 1) == 'w') try {
-                if (this.enemyBoard.GetCoord(theRow, theCol + 2) != 'x') return 1;
-            } catch (IndexOutOfRangeException) {return 1;}
-        } catch (IndexOutOfRangeException) {}
+        if (theRow == 0) options = options.Where(val => val != 0).ToArray();
+        else if (this.enemyBoard.GetCoord(theRow - 1, theCol) == 'o') options = options.Where(val => val != 0).ToArray();
 
-        //Left
-        try {
-            if (this.enemyBoard.GetCoord(theRow - 1, theCol) == 'w') try {
-                if (this.enemyBoard.GetCoord(theRow - 2, theCol) != 'x') return 2;
-            } catch (IndexOutOfRangeException) {return 2;}
-        } catch (IndexOutOfRangeException) {}
+        if (theRow >= this.enemyBoard.GetLength(0)-1) options = options.Where(val => val != 1).ToArray();
+        else if (this.enemyBoard.GetCoord(theRow + 1, theCol) == 'o') options = options.Where(val => val != 1).ToArray();
 
-        //Right
-        try {
-            if (this.enemyBoard.GetCoord(theRow + 1, theCol) == 'w') try {
-                if (this.enemyBoard.GetCoord(theRow + 2, theCol) != 'x') return 3;
-            } catch (IndexOutOfRangeException) {return 3;}
-        } catch (IndexOutOfRangeException) {}
-        return -1; //If we get here, something went wrong
+        if (theCol == 0) options = options.Where(val => val != 2).ToArray();
+        else if (this.enemyBoard.GetCoord(theRow, theCol - 1) == 'o') options = options.Where(val => val != 2).ToArray();
+
+        if (theCol >= this.enemyBoard.GetLength(1)-1) options = options.Where(val => val != 3).ToArray();
+        else if (this.enemyBoard.GetCoord(theRow, theCol + 1) == 'o') options = options.Where(val => val != 3).ToArray();
+        
+        Console.WriteLine("The options left are: " + string.Join(", ", options));
+        if (options.Length == 0) return -1; //Something went wrong
+        return options[rnd.Next(options.Length)];
     }
 
     private string rowColToCoordinate(int theRow, int theCol) {
