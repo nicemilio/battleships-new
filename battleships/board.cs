@@ -66,15 +66,27 @@ namespace battleships
             }
         }
 
-        public void PrintBoard()
+        public async void PrintBoard()
         {
             char[] coord = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'};
+            Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine("  1 2 3 4 5 6 7 8 9 10");
             for (int i = 0; i < mBoard.GetLength(0); i++)
             {
+                Console.ForegroundColor = ConsoleColor.White;
                 Console.Write(coord[i]);
                 for (int j = 0; j < mBoard.GetLength(1); j++)
                 {
+                    if (mBoard[i,j] == 's')
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    else if (mBoard[i,j] == 'w')
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                    else if (mBoard[i,j] == 'x')
+                        Console.ForegroundColor = ConsoleColor.Red;
+                    else if (mBoard[i,j] == 'o')
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                    else
+                        Console.ForegroundColor = ConsoleColor.White;
                     Console.Write(" " + mBoard[i,j]);
                 }
                 Console.Write('\n');

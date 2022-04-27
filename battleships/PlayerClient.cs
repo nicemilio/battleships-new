@@ -124,7 +124,7 @@ namespace battleships {
     }
 
     private void refreshConsole(String message = "") {
-        Console.Clear();
+        //Console.Clear();
         Console.WriteLine("Your Board");
         this.myBoard.PrintBoard();
         Console.WriteLine("Enemy Board");

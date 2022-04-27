@@ -11,7 +11,6 @@ namespace battleships {
     protected override async void StartClient(string ipString = "127.0.0.1") {
         //"127.0.0.1"
         IPAddress ip = IPAddress.Parse(ipString);
-        Console.WriteLine ("BotClient started");
         int port = 5000;
         for (int i = 0; i < 10; i++) {
             try {this.client.Connect(ip, port); break;}
@@ -19,6 +18,8 @@ namespace battleships {
                 Console.WriteLine("Bot failed to start, trying " + (10-i) + " more times.");
             }
         }
+        this.lastShot [0] = 1;
+        this.lastShot [1] = 1;
         
        // if (i > 9) exit; //TODO program exits when the connection doesnt work
         
@@ -38,10 +39,10 @@ namespace battleships {
                 mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
                 mData = mData.Substring(0, mData.Length-1);
                 this.myTurn = false;
-                Console.WriteLine ("Bot receives: " + mData);
                 if (mData.Length == 3) {
                     String response = checkEnemyShot(mData);
                     SendData(response);
+                    Thread.Sleep (500);
                     this.myTurn = (response != HIT && response != DESTROY);
                     break;
                 }
@@ -59,7 +60,6 @@ namespace battleships {
     protected override void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
         while (true) {
             if (this.myTurn) {
-                Console.WriteLine("Bot is shooting!");
                 int nextRow = this.lastShot[0];
                 int nextCol = this.lastShot[1];
                 if (this.previousResult == HIT) this.hunting = true;
@@ -120,7 +120,8 @@ namespace battleships {
                     }
 
                 } else {
-                    while (this.enemyBoard.CheckPosition(nextRow, nextCol, 1, false, 'x')) {
+                    while (! this.enemyBoard.CheckPosition(nextRow, nextCol, 1, false, 'x') 
+                           || this.enemyBoard.PrintCoord (nextRow, nextCol) == 'o') {
                         nextRow = rnd.Next(0, 10); //TODO change from 10 to board length
                         nextCol = rnd.Next(0, 10);
                     }
@@ -183,8 +184,8 @@ namespace battleships {
 
     private string rowColToCoordinate(int theRow, int theCol) {
         string word = "";
-        word += (char)(theRow + 64);
-        word += theCol.ToString("00");
+        word += (char)(theRow + 65);
+        word += (theCol + 1).ToString("00");
         return word;
     }
 

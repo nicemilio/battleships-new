@@ -59,7 +59,6 @@ namespace battleships
 
         private static void startgame() {
             //TODO add something to randomise the starting player
-            Console.WriteLine("starting the game");
             broadcast("first!", 0);
             broadcast("second!", 1);
         }
@@ -74,7 +73,6 @@ namespace battleships
                 {
                     if (c.Key == clientID) continue; //Don't send the message to the sender
                     NetworkStream stream = c.Value.GetStream();
-                    Console.WriteLine(data + " , send to client number: " + c.Key);
                     stream.Write(buffer, 0, buffer.Length);
                 }
             }
