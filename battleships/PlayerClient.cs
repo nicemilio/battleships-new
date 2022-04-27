@@ -15,15 +15,14 @@ namespace battleships {
         protected board enemyBoard;
         protected TcpClient client;
         protected string mData = "";
-        protected bool myTurn = false;
+        protected string message = "";
         protected int[] lastShot = new int[2]; //{theRow, theCol}
-       
 
     public PlayerCLient (string ipString = "127.0.0.1") {
         this.client = new TcpClient();
         this.myBoard = new board(10, 10, true);
         this.enemyBoard = new board(10, 10, false);
-        this.myTurn = false;
+        this.myBoard.PrintBoard();
         Console.WriteLine("Starting client");
         StartClient(ipString);
     }
@@ -36,7 +35,7 @@ namespace battleships {
         string keepTrying = "y";
         while (keepTrying == "y") {
             try {this.client.Connect(ip, port); keepTrying = "n";}
-            catch(SocketException e) {
+            catch(SocketException) {
                 Console.WriteLine("Connection refused. Want to try again? y/n");
                 string? readLine = Console.ReadLine();
                 keepTrying = String.IsNullOrEmpty(readLine) ? "y" : readLine;
@@ -46,58 +45,69 @@ namespace battleships {
         
         Console.WriteLine("Application connected to server!");
         Thread threadReceiveData = new Thread(ReceiveData);
-        Thread threadMyTurn = new Thread(Shoot);
+       // Thread threadMyTurn = new Thread(Shoot);
         threadReceiveData.Start();
-        threadMyTurn.Start();
+       // threadMyTurn.Start();
     }
     protected virtual void ReceiveData() {
         NetworkStream ns = this.client.GetStream();
         byte[] receivedBytes = new byte[1024];
         int byte_count;
+        String[] myTurnArray = {FIRST, HIT, DESTROY, RETRY};
+        String[] shotResponseArray = {MISS, HIT, DESTROY};
         while (true) {
-
-        
         while ((byte_count = ns.Read(receivedBytes, 0, receivedBytes.Length)) > 0)
         {
             mData = Encoding.ASCII.GetString(receivedBytes, 0, byte_count);
             mData = mData.Substring(0, mData.Length-1);
-            this.myTurn = false;
             if (mData.Length == 3) {
+                Console.WriteLine("Checking enemy shot");
                 String response = checkEnemyShot(mData);
+                Console.WriteLine("Response is: " + response);
                 SendData(response);
-                this.myTurn = (response != HIT && response != DESTROY);
-                if (this.myTurn) refreshConsole(mData);
-                else refreshConsole("Your opponent hit ("+mData+") and is taking another turn");
+                if (response == GAME) {
+                    this.message += ("Your opponent hit ("+mData+") and won the game!\n");
+                    //TODO Offer rematch
+                } else if (myTurnArray.Contains(response)) {
+                    this.message += ("Your opponent hit ("+mData+") and is taking another turn\n");
+                    RefreshConsole();
+                }
+                else {
+                    this.message += ("Your opponent shot (" + mData + ") and missed!\n");
+                    RefreshConsole();
+                    Shoot();
+                }
                 break;
             }
-            String[] myTurnArray = {FIRST, HIT, DESTROY, RETRY};
-            this.myTurn = myTurnArray.Contains(mData);
-            String[] shotResponseArray = {MISS, HIT, DESTROY};
-            if (shotResponseArray.Contains(mData))
+            
+           
+            if (shotResponseArray.Contains(mData)) 
                 this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], mData == MISS ? 'o' : 'x');
-
-            refreshConsole(mData);
-
+            if (mData == DESTROY) this.enemyBoard.fillMisses(this.lastShot[0], this.lastShot[1]);
+            this.message = mData+"\n";
+            RefreshConsole();
+            if (myTurnArray.Contains(mData)) Shoot();
         }
         }
     }
     
 
     protected virtual void Shoot() { //TODO Need a thread to be constantly checking if its your turn(?)
-        while (true) {
-            //Console.WriteLine("Checking myTurn...");
-            if (this.myTurn) {
-                //Take the shot
-
-                Console.WriteLine("Your turn!");
-
-                string readLine = Console.ReadLine();
-                if (readLine == "" || readLine == null) return;
-                SendData(readLine);
+        bool success = false;
+        while (!success) {
+            this.message = "\n";
+            string? readLine = Console.ReadLine();
+            if (readLine == "" || readLine == null) continue;
+            try {
                 this.lastShot[0] = coordinateToRowCol(readLine.Substring(0, 1));
                 this.lastShot[1] = coordinateToRowCol(readLine.Substring(1, 2));
-                this.myTurn = false;
+            } catch (Exception) {
+            //    Console.WriteLine(e.StackTrace);
+                Console.WriteLine(RETRY);
+                continue;
             }
+            SendData(readLine);
+            success = true;
         }
     }
     protected void SendData(String theMessage) {
@@ -106,10 +116,11 @@ namespace battleships {
         ns.Write(buffer, 0, buffer.Length);
     }
 
-    protected virtual string checkEnemyShot(string shot) {
+    protected string checkEnemyShot(string shot) {
         try {
-            int theRow = coordinateToRowCol(mData.Substring(0, 1)); //First character in the string
-            int theCol = coordinateToRowCol(mData.Substring(1, 2)); //Second and Thid characters in the string
+            int theRow = coordinateToRowCol(shot.Substring(0, 1)); //First character in the string
+            int theCol = coordinateToRowCol(shot.Substring(1, 2)); //Second and Third characters in the string
+            Console.WriteLine("Checking shot ["+theRow+","+theCol+"]");
             switch(this.myBoard.Shoot(theRow, theCol)) {
             case('o'): return MISS;
             case('x'): return HIT;
@@ -118,19 +129,23 @@ namespace battleships {
             default: throw new Exception("Something went wrong");
         }
         } catch (Exception e) {
+            Console.WriteLine(e.Message);
+            Console.WriteLine(e.StackTrace);
             Console.WriteLine("Your opponent entered bad coordinates, they are trying again");
             return RETRY;
         }
     }
 
-    private void refreshConsole(String message = "") {
-        //Console.Clear();
+    private void RefreshConsole() {
+        Console.Clear();
+        //Console.WriteLine();
         Console.WriteLine("Your Board");
         this.myBoard.PrintBoard();
         Console.WriteLine("Enemy Board");
         this.enemyBoard.PrintBoard();
-        Console.WriteLine(message);
+        Console.Write(this.message);
     }
+
     //Helper method to conver battleshipe coordinates (A10) to our integers
     protected int coordinateToRowCol(string co) {
         switch(co) {

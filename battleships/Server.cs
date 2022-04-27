@@ -9,27 +9,30 @@ namespace battleships
         static readonly object _lock = new object();
         static readonly Dictionary<int, TcpClient> list_clients = new Dictionary<int, TcpClient>();
 
-        public Server()
+        private bool consoleWrite;
+        private Random rnd = new Random();
+
+        public Server(bool consoleWrite = true)
         {
             int count = 0;
-
+            this.consoleWrite = consoleWrite;
             TcpListener ServerSocket = new TcpListener(IPAddress.Any, 5000);
             ServerSocket.Start();
-            Console.WriteLine("Server started!");
+            if (this.consoleWrite) Console.WriteLine("Server started!");
             while (true)
             {
                 TcpClient client = ServerSocket.AcceptTcpClient();
                 lock (_lock) list_clients.Add(count, client);
-                Console.WriteLine("Someone connected!!");
+                if (this.consoleWrite) Console.WriteLine("Someone connected!!");
 
-                Thread t = new Thread(handle_clients);
+                Thread t = new Thread((o) => handle_clients(o));
                 t.Start(count);
                 count++;
                 if (list_clients.Count () == 2) startgame ();
             }
         }
 
-        public static void handle_clients(object o)
+        public void handle_clients(object o)
         {
             int id = (int)o;
             TcpClient client;
@@ -49,7 +52,7 @@ namespace battleships
 
                 string data = Encoding.ASCII.GetString(buffer, 0, byte_count);
                 broadcast(data, id);
-                Console.WriteLine(data);
+                if (this.consoleWrite) Console.WriteLine(data);
             }
 
             lock (_lock) list_clients.Remove(id);
@@ -57,13 +60,14 @@ namespace battleships
             client.Close();
         }
 
-        private static void startgame() {
-            //TODO add something to randomise the starting player
-            broadcast("first!", 0);
-            broadcast("second!", 1);
+        private void startgame() {
+            if (this.consoleWrite) Console.WriteLine("starting the game");
+            bool randChoice = rnd.Next(0, 2) == 0;
+            broadcast("first!", randChoice ? 0 : 1);
+            broadcast("second!", randChoice ? 1 : 0);
         }
 
-        public static void broadcast(string data, int clientID)
+        public void broadcast(string data, int clientID)
         {
             byte[] buffer = Encoding.ASCII.GetBytes(data + Environment.NewLine);
 
@@ -73,6 +77,7 @@ namespace battleships
                 {
                     if (c.Key == clientID) continue; //Don't send the message to the sender
                     NetworkStream stream = c.Value.GetStream();
+                    if (this.consoleWrite) Console.WriteLine(data + " , send to client number: " + c.Key);
                     stream.Write(buffer, 0, buffer.Length);
                 }
             }
