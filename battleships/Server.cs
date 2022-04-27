@@ -10,6 +10,7 @@ namespace battleships
         static readonly Dictionary<int, TcpClient> list_clients = new Dictionary<int, TcpClient>();
 
         private bool consoleWrite;
+        private Random rnd = new Random();
 
         public Server(bool consoleWrite = true)
         {
@@ -60,10 +61,10 @@ namespace battleships
         }
 
         private void startgame() {
-            //TODO add something to randomise the starting player
             if (this.consoleWrite) Console.WriteLine("starting the game");
-            broadcast("first!", 0);
-            broadcast("second!", 1);
+            bool randChoice = rnd.Next(0, 2) == 0;
+            broadcast("first!", randChoice ? 0 : 1);
+            broadcast("second!", randChoice ? 1 : 0);
         }
 
         public void broadcast(string data, int clientID)
