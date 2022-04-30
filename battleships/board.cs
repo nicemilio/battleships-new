@@ -30,14 +30,7 @@ namespace battleships
 
         
 
-        void StopClient(TcpClient client)
-        {
-            client.Client.Shutdown(SocketShutdown.Send);
-            //ns.Close();
-            client.Close();
-            Console.WriteLine("Disconnect from server!");
-            Console.ReadKey();
-        }
+        
         void AutoFill()
         {
             foreach(int i in this.schiffe)

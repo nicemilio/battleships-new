@@ -11,6 +11,7 @@ namespace battleships {
         protected const string RETRY = "Bad input, shoot again";
         protected const string FIRST = "first!";
         protected const string SECOND = "second!";
+        protected const string DISCONNECT = "disconnect!";
         protected board myBoard;
         protected board enemyBoard;
         protected TcpClient client;
@@ -44,11 +45,20 @@ namespace battleships {
         // if (!keepTrying) exit;
         
         Console.WriteLine("Application connected to server!");
+        IPEndPoint endpoint = this.client.Client.RemoteEndPoint as IPEndPoint;
+        Console.WriteLine(endpoint.Address);
         Thread threadReceiveData = new Thread(ReceiveData);
        // Thread threadMyTurn = new Thread(Shoot);
         threadReceiveData.Start();
        // threadMyTurn.Start();
     }
+
+    protected void StopClient()
+        {
+            this.client.Client.Shutdown(SocketShutdown.Send);
+            this.client.Close();
+            Console.ReadKey();
+        }
     protected virtual void ReceiveData() {
         NetworkStream ns = this.client.GetStream();
         byte[] receivedBytes = new byte[1024];
@@ -67,7 +77,9 @@ namespace battleships {
                 SendData(response);
                 if (response == GAME) {
                     this.message += ("Your opponent hit ("+mData+") and won the game!\n");
-                    //TODO Offer rematch
+                    RefreshConsole();
+                    StopClient();
+                    return;
                 } else if (myTurnArray.Contains(response)) {
                     this.message += ("Your opponent hit ("+mData+") and is taking another turn\n");
                     RefreshConsole();
@@ -80,12 +92,16 @@ namespace battleships {
                 break;
             }
             
-           
+            
             if (shotResponseArray.Contains(mData)) 
                 this.enemyBoard.AssignChar(this.lastShot[0], this.lastShot[1], mData == MISS ? 'o' : 'x');
             if (mData == DESTROY) this.enemyBoard.fillMisses(this.lastShot[0], this.lastShot[1]);
-            this.message = mData+"\n";
+            this.message = mData+'\n';
             RefreshConsole();
+            if (mData == GAME || mData == DISCONNECT) {
+                StopClient();
+                return;
+            }
             if (myTurnArray.Contains(mData)) Shoot();
         }
         }

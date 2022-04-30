@@ -55,6 +55,10 @@ namespace battleships {
                     this.lastHit[0] = this.lastShot[0];
                     this.lastHit[1] = this.lastShot[1];
                 } else if (mData == DESTROY) this.hunting = false;
+                if (mData == GAME || mData == DISCONNECT) {
+                    StopClient();
+                    return;
+                }
                 if (myTurnArray.Contains(mData)) Shoot();
             }
         }
@@ -64,16 +68,13 @@ namespace battleships {
     protected override void Shoot() {
         Thread.Sleep(1000);
         int nextRow, nextCol;
-        Console.WriteLine("Bot is hunting: "+ this.hunting);
+        //Console.WriteLine("Bot is hunting: "+ this.hunting);
 
         if (this.hunting) {
            
             nextRow = this.lastHit[0];
             nextCol = this.lastHit[1];
-            Console.WriteLine("Bot's last hit was: [" + nextRow + "," + nextCol + "]");
-            Console.WriteLine("Bot's last shot was: [" + lastShot[0] + "," + lastShot[1] + "]");
             if (! this.enemyBoard.CheckPosition(nextRow, nextCol, 1, false, 'x', true)) {
-                Console.WriteLine("Bot is on a streak and is killing your ship");
                 int dir = 1;
                 bool isHorizontal = this.enemyBoard.checkHorizontal(nextRow, nextCol);
 
@@ -96,11 +97,8 @@ namespace battleships {
                         nextRow += dir;
                     }
                 }
-                Console.WriteLine("While clause exited...");
             } else {
-                Console.WriteLine("Bot got his first hit and is choosing a random direction");
                 int choice = chooseDirection(nextRow, nextCol);
-                Console.WriteLine("The choice is: " + choice);
                 switch (choice) {
                     case 0: {
                         nextRow -= 1;
@@ -121,19 +119,14 @@ namespace battleships {
                     default: throw new Exception("Something went wrong");
                 }
             }
-            Console.WriteLine("Hunting bot will shoot: [" + nextRow + "," + nextCol + "]");
         } else {
             do {
                 nextRow = rnd.Next(0, 10); //TODO change from 10 to board length
                 nextCol = rnd.Next(0, 10);
-                Console.WriteLine("Bot is trying [" + nextRow + "," + nextCol + "]");
             } while (this.enemyBoard.GetCoord(nextRow, nextCol) != 'w');
-            Console.WriteLine("While clause exited...");
         }
         this.lastShot[0] = nextRow;
         this.lastShot[1] = nextCol;
-        Console.WriteLine("Bot is shooting: [" + lastShot[0] + "," + lastShot[1] + "]");
-        Console.WriteLine("Bot's latest hit was: [" + lastHit[0] + "," + lastHit[1] + "]");
         SendData(rowColToCoordinate(nextRow, nextCol));
     }
 
@@ -154,7 +147,7 @@ namespace battleships {
         if (theCol >= this.enemyBoard.GetLength(1)-1) options = options.Where(val => val != 3).ToArray();
         else if (this.enemyBoard.GetCoord(theRow, theCol + 1) == 'o') options = options.Where(val => val != 3).ToArray();
         
-        Console.WriteLine("The options left are: " + string.Join(", ", options));
+       // Console.WriteLine("The options left are: " + string.Join(", ", options));
         if (options.Length == 0) return -1; //Something went wrong
         return options[rnd.Next(options.Length)];
     }
